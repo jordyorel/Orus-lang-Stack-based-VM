@@ -4,7 +4,8 @@ static mut SEED: u64 = 123456789u
 
 fn rand_u64() -> u64 {
     // Update the global seed using LCG parameters
-    SEED = ((SEED as i64 * 6364136223846793005 + 1) as u64)
+    let temp: f64 = (SEED as f64) * 6364136223846793005.0 + 1.0
+    SEED = temp as u64
     return SEED
 }
 
