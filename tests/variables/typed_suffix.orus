@@ -1,0 +1,12 @@
+fn main() {
+    let a = 5i32
+    let b = 5i64
+    let c = 5u32
+    let d = 5u64
+    let e = 5f64
+    print(type_of(a))
+    print(type_of(b))
+    print(type_of(c))
+    print(type_of(d))
+    print(type_of(e))
+}

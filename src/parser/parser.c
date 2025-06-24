@@ -260,8 +260,30 @@ static ASTNode* parseNumber(Parser* parser) {
         }
     }
 
-    bool hasSuffix = (start[length - 1] == 'u' || start[length - 1] == 'U');
-    int copyLen = hasSuffix ? length - 1 : length;
+    bool suffix_i32 = false;
+    bool suffix_i64 = false;
+    bool suffix_u32 = false;
+    bool suffix_u64 = false;
+    bool suffix_f64 = false;
+    bool simple_u = false;
+
+    if (length >= 3) {
+        if (strncmp(start + length - 3, "i32", 3) == 0) suffix_i32 = true;
+        else if (strncmp(start + length - 3, "i64", 3) == 0) suffix_i64 = true;
+        else if (strncmp(start + length - 3, "u32", 3) == 0) suffix_u32 = true;
+        else if (strncmp(start + length - 3, "u64", 3) == 0) suffix_u64 = true;
+        else if (strncmp(start + length - 3, "f64", 3) == 0) {
+            suffix_f64 = true;
+            isFloat = true;
+        }
+    }
+
+    if (!suffix_i32 && !suffix_i64 && !suffix_u32 && !suffix_u64 && !suffix_f64 &&
+        (start[length - 1] == 'u' || start[length - 1] == 'U')) {
+        simple_u = true;
+    }
+
+    int copyLen = length - (suffix_i32 || suffix_i64 || suffix_u32 || suffix_u64 || suffix_f64 ? 3 : (simple_u ? 1 : 0));
 
     char* numStr = (char*)malloc(copyLen + 1);
     int j = 0;
@@ -286,8 +308,13 @@ static ASTNode* parseNumber(Parser* parser) {
 
         char* endptr;
         uint64_t uval = strtoull(numStr, &endptr, base);
-
-        if (hasSuffix) {
+        if (suffix_i32) {
+            node = createLiteralNode(I32_VAL((int32_t)uval));
+            node->valueType = createPrimitiveType(TYPE_I32);
+        } else if (suffix_i64) {
+            node = createLiteralNode(I64_VAL((int64_t)uval));
+            node->valueType = createPrimitiveType(TYPE_I64);
+        } else if (suffix_u32 || simple_u) {
             if (uval <= UINT32_MAX) {
                 node = createLiteralNode(U32_VAL((uint32_t)uval));
                 node->valueType = createPrimitiveType(TYPE_U32);
@@ -295,6 +322,12 @@ static ASTNode* parseNumber(Parser* parser) {
                 node = createLiteralNode(U64_VAL(uval));
                 node->valueType = createPrimitiveType(TYPE_U64);
             }
+        } else if (suffix_u64) {
+            node = createLiteralNode(U64_VAL(uval));
+            node->valueType = createPrimitiveType(TYPE_U64);
+        } else if (uval <= INT32_MAX) {
+            node = createLiteralNode(I32_VAL((int32_t)uval));
+            node->valueType = createPrimitiveType(TYPE_I32);
         } else if (uval <= INT64_MAX) {
             node = createLiteralNode(I64_VAL((int64_t)uval));
             node->valueType = createPrimitiveType(TYPE_I64);
