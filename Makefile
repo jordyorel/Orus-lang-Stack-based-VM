@@ -1,6 +1,15 @@
 CC=gcc
 EMCC=emcc
-all: debug
+all: debug web-if-available
+
+# Try to build WebAssembly if emcc is available, otherwise skip
+web-if-available:
+	@if command -v emcc >/dev/null 2>&1; then \
+		echo "Emscripten found, building WebAssembly..."; \
+		$(MAKE) web-simple; \
+	else \
+		echo "Emscripten not found, skipping WebAssembly build (use 'make web-simple' if you have emcc installed)"; \
+	fi
 CFLAGS=-I./include -Wall -g
 SRC=$(shell find src -name '*.c' | grep -v 'src/web/')
 WEB_SRC=$(shell find src -name '*.c' | grep -v main.c | grep -v 'src/web/') src/web/web_main.c

@@ -22,16 +22,25 @@ To build the WebAssembly version, you need:
 
 From the project root directory:
 
-### JavaScript Version
+### Default Build (Recommended)
 ```bash
-# Build the WebAssembly version
-make web
+# Build both native compiler and WebAssembly (if Emscripten available)
+make
 ```
 
-### TypeScript Version
+### WebAssembly Only
 ```bash
+# Build the working simple WebAssembly version
+make web-simple
+```
+
+### Advanced WebAssembly Options
+```bash
+# Build modular WebAssembly (may have compatibility issues)
+make web
+
 # Build with TypeScript support
-./build_typescript.sh
+make web-ts
 ```
 
 This will:
@@ -64,8 +73,11 @@ Then open http://localhost:8000 in your browser.
 ## Files
 
 ### Core Files
-- **`orus-web.js`** - Generated Emscripten JavaScript wrapper
-- **`orus-web.wasm`** - Generated WebAssembly binary
+- **`orus-simple.js`** - Working WebAssembly JavaScript wrapper (recommended)
+- **`orus-simple.wasm`** - Working WebAssembly binary (recommended)
+- **`orus-web.js`** - Modular WebAssembly JavaScript wrapper (advanced)
+- **`orus-web.wasm`** - Modular WebAssembly binary (advanced)
+- **`playground-simple.html`** - Simple playground interface (working)
 - **`../src/web/web_main.c`** - WebAssembly-specific C entry point
 - **`../src/web/pre.js`** - Pre-JavaScript for WASM setup
 

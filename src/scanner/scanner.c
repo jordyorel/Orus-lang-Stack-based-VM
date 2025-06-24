@@ -86,7 +86,55 @@ void init_scanner(const char* source) {
     scanner.current = source;
     scanner.source = source; // store the beginning of the entire source
     scanner.line = 1;
+    scanner.column = 1;
+    scanner.lineStart = source;
     init_keyword_table();
+}
+
+/**
+ * Calculate precise column position accounting for tabs with configurable tab width.
+ * 
+ * @param lineStart Pointer to the start of the line
+ * @param position Pointer to the target position
+ * @param tabWidth Width of tab characters (typically 4 or 8)
+ * @return Column number (1-based)
+ */
+int calculateColumn(const char* lineStart, const char* position, int tabWidth) {
+    if (!lineStart || !position || position < lineStart) {
+        return 1;
+    }
+    
+    int column = 1;
+    for (const char* p = lineStart; p < position; p++) {
+        if (*p == '\t') {
+            // Round up to next tab stop
+            column = ((column - 1) / tabWidth + 1) * tabWidth + 1;
+        } else {
+            column++;
+        }
+    }
+    
+    return column;
+}
+
+/**
+ * Find the start of the line containing the given position.
+ * 
+ * @param source Pointer to the beginning of the source code
+ * @param position Target position within the source
+ * @return Pointer to the start of the line containing position
+ */
+const char* findLineStart(const char* source, const char* position) {
+    if (!source || !position || position < source) {
+        return source;
+    }
+    
+    const char* lineStart = position;
+    while (lineStart > source && lineStart[-1] != '\n') {
+        lineStart--;
+    }
+    
+    return lineStart;
 }
 
 /**
@@ -149,8 +197,20 @@ static bool is_at_end() {
  * @return The consumed character.
  */
 static char advance() {
+    char c = *scanner.current;
     scanner.current++;
-    return scanner.current[-1];
+    
+    if (c == '\n') {
+        scanner.line++;
+        scanner.column = 1;
+        scanner.lineStart = scanner.current;
+    } else if (c == '\t') {
+        scanner.column = ((scanner.column - 1) / 4 + 1) * 4 + 1; // Tab width of 4
+    } else {
+        scanner.column++;
+    }
+    
+    return c;
 }
 
 /**
@@ -192,6 +252,7 @@ static Token make_token(TokenType type) {
     token.start = scanner.start;
     token.length = (int)(scanner.current - scanner.start);
     token.line = scanner.line;
+    token.column = calculateColumn(scanner.lineStart, scanner.start, 4);
     return token;
 }
 
@@ -206,6 +267,7 @@ static Token error_token(const char* message) {
     token.start = message;
     token.length = (int)(strlen(message));
     token.line = scanner.line;
+    token.column = calculateColumn(scanner.lineStart, scanner.start, 4);
     return token;
 }
 
@@ -414,7 +476,6 @@ static Token number() {
  */
 static Token string() {
     while (peek() != '"' && !is_at_end()) {
-        if (peek() == '\n') scanner.line++;
         if (peek() == '\\') {
             advance();
             switch (peek()) {
@@ -454,7 +515,6 @@ Token scan_token() {
 
     // Handle newline as a token
     if (c == '\n') {
-        scanner.line++;
         return make_token(TOKEN_NEWLINE);
     }
 

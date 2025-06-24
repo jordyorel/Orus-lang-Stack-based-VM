@@ -59,6 +59,7 @@ typedef struct {
     const char* start;
     int length;
     int line;
+    int column;  // Add precise column tracking
 } Token;
 
 typedef struct {
@@ -66,6 +67,8 @@ typedef struct {
     const char* current;
     const char* source;  // Pointer to the beginning of the entire source
     int line;
+    int column;          // Add column tracking
+    const char* lineStart;  // Track start of current line for precise column calculation
 } Scanner;
 
 typedef struct {
@@ -75,6 +78,10 @@ typedef struct {
 
 void init_scanner(const char* source);
 Token scan_token();
+
+// Utility functions for precise position tracking
+int calculateColumn(const char* lineStart, const char* position, int tabWidth);
+const char* findLineStart(const char* source, const char* position);
 
 // Expose the global scanner instance so other modules (like the parser)
 // can access the raw source when producing error messages.
