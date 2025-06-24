@@ -6,7 +6,12 @@
       "Bash(awk:*)",
       "Bash(cloc:*)",
       "Bash(find:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(make:*)",
+      "Bash(chmod:*)",
+      "Bash(./build_web.sh:*)",
+      "Bash(gcc:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

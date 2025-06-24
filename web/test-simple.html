@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orus Simple WASM Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        .log { background: #2d2d30; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { color: #f14c4c; }
+        .success { color: #4caf50; }
+        .info { color: #9cdcfe; }
+        button { background: #0e639c; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Orus Simple WASM Test</h1>
+    
+    <div id="output" class="log">Loading...</div>
+    
+    <div>
+        <button onclick="testInit()">Test Init</button>
+        <button onclick="testVersion()">Test Version</button>
+        <button onclick="testRun()">Test Run</button>
+    </div>
+    
+    <script>
+        let Module = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            const output = document.getElementById('output');
+            output.innerHTML += `<div class="${type}">${logEntry}</div>`;
+            output.scrollTop = output.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function testInit() {
+            if (!Module) {
+                log('Module not loaded yet', 'error');
+                return;
+            }
+            
+            try {
+                const result = Module.ccall('initWebVM', 'number', [], []);
+                log('initWebVM result: ' + result, result === 0 ? 'success' : 'error');
+            } catch (error) {
+                log('Error calling initWebVM: ' + error.message, 'error');
+            }
+        }
+        
+        function testVersion() {
+            if (!Module) {
+                log('Module not loaded yet', 'error');
+                return;
+            }
+            
+            try {
+                const version = Module.ccall('getVersion', 'string', [], []);
+                log('Version: ' + version, 'success');
+            } catch (error) {
+                log('Error getting version: ' + error.message, 'error');
+            }
+        }
+        
+        function testRun() {
+            if (!Module) {
+                log('Module not loaded yet', 'error');
+                return;
+            }
+            
+            try {
+                const code = 'print("Hello from WASM!")';
+                const result = Module.ccall('runSource', 'number', ['string'], [code]);
+                log('runSource result: ' + result, result === 0 ? 'success' : 'error');
+            } catch (error) {
+                log('Error running code: ' + error.message, 'error');
+            }
+        }
+        
+        // Load the WASM module
+        log('Loading orus-simple.js...');
+        
+        const script = document.createElement('script');
+        script.src = 'orus-simple.js';
+        script.onload = function() {
+            log('Script loaded, creating module...');
+            
+            // The simple build doesn't use modularize, so the module should be available as a global
+            if (typeof Module !== 'undefined' && Module.ccall) {
+                log('Module ready!', 'success');
+            } else {
+                // Wait for module to be ready
+                const checkReady = setInterval(() => {
+                    if (typeof Module !== 'undefined' && Module.ccall) {
+                        clearInterval(checkReady);
+                        log('Module ready!', 'success');
+                    }
+                }, 100);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    clearInterval(checkReady);
+                    log('Timeout waiting for module', 'error');
+                }, 10000);
+            }
+        };
+        script.onerror = function() {
+            log('Failed to load script', 'error');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
