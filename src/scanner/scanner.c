@@ -475,6 +475,9 @@ static Token number() {
  * @return Token for the parsed string.
  */
 static Token string() {
+    const char* stringStart = scanner.start;  // Remember where the string started
+    int stringLine = scanner.line;            // Remember the line where string started
+    
     while (peek() != '"' && !is_at_end()) {
         if (peek() == '\\') {
             advance();
@@ -493,7 +496,23 @@ static Token string() {
         }
     }
 
-    if (is_at_end()) return error_token("Unterminated string.");
+    if (is_at_end()) {
+        // For unterminated string, we want to point to the opening quote
+        // but we need to preserve the error message mechanism
+        // Let's create a special error token that points to the right location
+        Token token;
+        token.type = TOKEN_ERROR;
+        token.start = "Unterminated string.";  // Keep the error message
+        token.length = (int)strlen("Unterminated string.");
+        token.line = stringLine;  // Use the line where string started
+        
+        // Calculate column for the opening quote
+        const char* lineStart = stringStart;
+        while (lineStart > scanner.source && lineStart[-1] != '\n') lineStart--;
+        token.column = (int)(stringStart - lineStart) + 1;
+        
+        return token;
+    }
     advance();  // Consume the closing quote
     return make_token(TOKEN_STRING);
 }

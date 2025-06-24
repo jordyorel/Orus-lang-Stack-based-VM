@@ -74,14 +74,32 @@ static void errorAt(Parser* parser, Token* token, const char* message) {
     diagnostic.text.message = message;
     diagnostic.primarySpan.line = token->line;
 
-    const char* lineStart = token->start;
-    while (lineStart > scanner.source && lineStart[-1] != '\n') lineStart--;
-    diagnostic.primarySpan.column = (int)(token->start - lineStart) + 1;
-    diagnostic.primarySpan.length = token->length > 0 ? token->length : 1;
+    // For error tokens, we need to extract the source line from the scanner's source
+    // rather than using token->start which points to the error message
+    const char* lineStart;
+    if (token->type == TOKEN_ERROR) {
+        // Find the start of the line where the error occurred
+        lineStart = scanner.source;
+        int currentLine = 1;
+        while (currentLine < token->line && *lineStart != '\0') {
+            if (*lineStart == '\n') currentLine++;
+            lineStart++;
+        }
+        // Now lineStart points to the beginning of the error line
+        diagnostic.primarySpan.column = token->column;
+        diagnostic.primarySpan.length = 1;  // Highlight just the problematic character
+    } else {
+        // Normal token handling
+        lineStart = token->start;
+        while (lineStart > scanner.source && lineStart[-1] != '\n') lineStart--;
+        diagnostic.primarySpan.column = (int)(token->start - lineStart) + 1;
+        diagnostic.primarySpan.length = token->length > 0 ? token->length : 1;
+    }
+    
     diagnostic.primarySpan.filePath =
         parser->filePath ? parser->filePath : "<source>";
 
-    const char* lineEnd = token->start;
+    const char* lineEnd = lineStart;
     while (*lineEnd != '\n' && *lineEnd != '\0') lineEnd++;
     int lineLength = (int)(lineEnd - lineStart);
     char* buf = (char*)malloc(lineLength + 1);
@@ -89,8 +107,26 @@ static void errorAt(Parser* parser, Token* token, const char* message) {
     buf[lineLength] = '\0';
     diagnostic.sourceText = buf;
 
-    diagnostic.text.help = strdup("verify the syntax near this token");
-    const char* note = "the parser could not understand this part of the source";
+    // Provide specific help messages based on the error type
+    const char* helpMessage;
+    if (strstr(message, "Unterminated string") != NULL) {
+        helpMessage = "add a closing quote (\") to complete the string literal";
+    } else if (strstr(message, "Invalid escape sequence") != NULL) {
+        helpMessage = "use a valid escape sequence like \\n, \\t, \\\\, or \\\"";
+    } else {
+        helpMessage = "verify the syntax near this token";
+    }
+    diagnostic.text.help = strdup(helpMessage);
+    
+    // Provide specific note messages based on the error type
+    const char* note;
+    if (strstr(message, "Unterminated string") != NULL) {
+        note = "string literals must be closed with a matching quote character";
+    } else if (strstr(message, "Invalid escape sequence") != NULL) {
+        note = "only specific escape sequences are supported in string literals";
+    } else {
+        note = "the parser could not understand this part of the source";
+    }
     diagnostic.text.notes = (char**)&note;
     diagnostic.text.noteCount = 1;
 
