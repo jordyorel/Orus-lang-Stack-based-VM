@@ -8,6 +8,11 @@ build/
 # build artifacts
 orusc
 
+# WebAssembly build artifacts
+web/*.js
+web/*.wasm
+web/*.d.ts
+
 # image assets
 *.png
 *.jpg

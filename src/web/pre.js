@@ -56,21 +56,28 @@ Module.stderr = Module.stdout; // Same handling for now
 Module.onRuntimeInitialized = function() {
     console.log('Orus WebAssembly module loaded successfully');
     
-    // Get references to exported functions
-    Module._initWebVM = Module.cwrap('initWebVM', 'number', []);
-    Module._runSource = Module.cwrap('runSource', 'number', ['string']);
-    Module._freeWebVM = Module.cwrap('freeWebVM', 'void', []);
-    Module._getVersion = Module.cwrap('getVersion', 'string', []);
-    Module._getLastError = Module.cwrap('getLastError', 'string', []);
-    Module._clearLastError = Module.cwrap('clearLastError', 'void', []);
-    Module._isVMReady = Module.cwrap('isVMReady', 'boolean', []);
-    Module._resetVMState = Module.cwrap('resetVMState', 'void', []);
-    Module._getVMStackSize = Module.cwrap('getVMStackSize', 'number', []);
-    Module._getVMFrameCount = Module.cwrap('getVMFrameCount', 'number', []);
-    Module._getVMModuleCount = Module.cwrap('getVMModuleCount', 'number', []);
-    
-    // Initialize the VM
+    // Ensure all exported functions are available
     try {
+        // Get references to exported functions with error checking
+        if (typeof Module.ccall === 'function' && typeof Module.cwrap === 'function') {
+            Module._initWebVM = Module.cwrap('initWebVM', 'number', []);
+            Module._runSource = Module.cwrap('runSource', 'number', ['string']);
+            Module._freeWebVM = Module.cwrap('freeWebVM', 'void', []);
+            Module._getVersion = Module.cwrap('getVersion', 'string', []);
+            Module._getLastError = Module.cwrap('getLastError', 'string', []);
+            Module._clearLastError = Module.cwrap('clearLastError', 'void', []);
+            Module._isVMReady = Module.cwrap('isVMReady', 'boolean', []);
+            Module._resetVMState = Module.cwrap('resetVMState', 'void', []);
+            Module._getVMStackSize = Module.cwrap('getVMStackSize', 'number', []);
+            Module._getVMFrameCount = Module.cwrap('getVMFrameCount', 'number', []);
+            Module._getVMModuleCount = Module.cwrap('getVMModuleCount', 'number', []);
+            
+            console.log('Function wrappers created successfully');
+        } else {
+            throw new Error('ccall/cwrap not available');
+        }
+        
+        // Initialize the VM
         var initResult = Module._initWebVM();
         if (initResult !== 0) {
             console.error('Failed to initialize Orus VM:', initResult);
@@ -79,7 +86,8 @@ Module.onRuntimeInitialized = function() {
             console.log('Orus version:', Module._getVersion());
         }
     } catch (error) {
-        console.error('Error initializing Orus VM:', error);
+        console.error('Error setting up Orus VM:', error);
+        console.error('Available Module properties:', Object.keys(Module));
     }
     
     // Notify that the module is ready

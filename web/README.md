@@ -22,15 +22,24 @@ To build the WebAssembly version, you need:
 
 From the project root directory:
 
+### JavaScript Version
 ```bash
 # Build the WebAssembly version
 make web
+```
+
+### TypeScript Version
+```bash
+# Build with TypeScript support
+./build_typescript.sh
 ```
 
 This will:
 1. Generate the embedded standard library
 2. Compile all source files to WebAssembly
 3. Create `web/orus-web.js` and `web/orus-web.wasm`
+4. Generate TypeScript definitions (`orus-web.d.ts`, `orus.d.ts`)
+5. Compile TypeScript playground to JavaScript
 
 ## Running the Playground
 
@@ -54,12 +63,22 @@ Then open http://localhost:8000 in your browser.
 
 ## Files
 
-- **`index.html`** - Main playground interface
-- **`playground.js`** - JavaScript interface for the playground
+### Core Files
 - **`orus-web.js`** - Generated Emscripten JavaScript wrapper
 - **`orus-web.wasm`** - Generated WebAssembly binary
 - **`../src/web/web_main.c`** - WebAssembly-specific C entry point
 - **`../src/web/pre.js`** - Pre-JavaScript for WASM setup
+
+### JavaScript Version
+- **`index.html`** - Main playground interface
+- **`playground.js`** - JavaScript interface for the playground
+
+### TypeScript Version
+- **`index-ts.html`** - TypeScript-enabled playground interface
+- **`playground.ts`** - TypeScript source code for the playground
+- **`orus.d.ts`** - TypeScript definitions for the Orus API
+- **`orus-web.d.ts`** - Generated Emscripten TypeScript definitions
+- **`tsconfig.json`** - TypeScript compiler configuration
 
 ## Features
 

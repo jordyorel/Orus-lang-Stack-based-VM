@@ -126,8 +126,6 @@
             line-height: 1.5;
             overflow-y: auto;
             white-space: pre-wrap;
-            border: none;
-            outline: none;
         }
 
         .status-bar {
@@ -144,15 +142,6 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .loading {
-            display: none;
-            color: #ffd700;
-        }
-
-        .loading.show {
-            display: inline;
         }
 
         .error {
@@ -206,11 +195,8 @@
             <button class="btn" id="runBtn" onclick="runCode()" disabled>
                 ▶ Run
             </button>
-            <button class="btn clear" id="clearBtn" onclick="clearOutput()">
+            <button class="btn clear" onclick="clearOutput()">
                 Clear Output
-            </button>
-            <button class="btn clear" id="resetBtn" onclick="resetVM()">
-                Reset VM
             </button>
         </div>
     </div>
@@ -223,21 +209,18 @@
                     <span class="example-btn" onclick="loadExample('hello')">Hello World</span>
                     <span class="example-btn" onclick="loadExample('variables')">Variables</span>
                     <span class="example-btn" onclick="loadExample('functions')">Functions</span>
-                    <span class="example-btn" onclick="loadExample('generics')">Generics</span>
                     <span class="example-btn" onclick="loadExample('math')">Math</span>
                 </div>
             </div>
-            <textarea class="editor" id="editor" placeholder="Enter your Orus code here...">// Welcome to the Orus Programming Language Playground!
-// Try some examples using the buttons above, or write your own code.
-
-print("Hello, Orus World!")
-
-let x = 42
-let y = 3.14
-
-print("x =", x)
-print("y =", y)
-print("x + y =", x + y)</textarea>
+            <textarea class="editor" id="editor" placeholder="Enter your Orus code here...">fn main() {
+    print("Welcome to Orus!")
+    
+    let name = "Orus"
+    let version = 0.2
+    
+    print("Language:", name)
+    print("Version:", version)
+}</textarea>
         </div>
 
         <div class="output-panel">
@@ -252,14 +235,162 @@ Click "Run" to execute your code.
     <div class="status-bar">
         <div class="status-item">
             <span id="status">Initializing...</span>
-            <span class="loading" id="loading">⟳</span>
-        </div>
-        <div class="status-item">
-            <span id="vmStats">VM: Not Ready</span>
         </div>
     </div>
 
-    <script src="orus-web.js"></script>
-    <script src="playground.js"></script>
+    <script>
+        // Example code snippets
+        const examples = {
+            hello: `fn main() {
+    print("Hello, Orus World!")
+    print("Welcome to the Orus Programming Language!")
+}`,
+
+            variables: `fn main() {
+    let name = "Orus"
+    let version = 0.2
+    let isAwesome = true
+
+    print("Language:", name)
+    print("Version:", version)
+    print("Is awesome?", isAwesome)
+
+    // Type conversion
+    let numberStr = "42"
+    let number = int(numberStr)
+    print("Converted:", numberStr, "->", number)
+}`,
+
+            functions: `fn greet(name: string) -> string {
+    return "Hello, " + name + "!"
+}
+
+fn add(a: i32, b: i32) -> i32 {
+    return a + b
+}
+
+fn main() {
+    print(greet("World"))
+    print("5 + 3 =", add(5, 3))
+}`,
+
+            math: `use std::math
+
+fn main() {
+    let x = 16.0
+    let y = 25.0
+
+    print("sqrt(", x, ") =", math::sqrt(x))
+    print("sqrt(", y, ") =", math::sqrt(y))
+    print("PI =", math::PI)
+    print("E =", math::E)
+}`
+        };
+
+        // Set up Module object before loading script
+        var Module = {
+            onRuntimeInitialized: function() {
+                console.log('Orus WebAssembly loaded!');
+                
+                // Initialize VM
+                try {
+                    const initResult = Module.ccall('initWebVM', 'number', [], []);
+                    if (initResult === 0) {
+                        const version = Module.ccall('getVersion', 'string', [], []);
+                        document.getElementById('version').textContent = version;
+                        document.getElementById('status').textContent = 'Ready';
+                        document.getElementById('runBtn').disabled = false;
+                        console.log('Orus VM initialized, version:', version);
+                    } else {
+                        throw new Error('VM initialization failed');
+                    }
+                } catch (error) {
+                    console.error('Error initializing Orus:', error);
+                    document.getElementById('status').textContent = 'Error: ' + error.message;
+                    document.getElementById('status').className = 'error';
+                }
+            },
+            
+            print: function(text) {
+                appendOutput(text);
+            },
+            
+            printErr: function(text) {
+                appendOutput('Error: ' + text);
+            }
+        };
+
+        function runCode() {
+            const editor = document.getElementById('editor');
+            const code = editor.value.trim();
+            
+            if (!code) {
+                appendOutput('Error: No code to execute');
+                return;
+            }
+            
+            try {
+                const result = Module.ccall('runSource', 'number', ['string'], [code]);
+                if (result !== 0) {
+                    // Error message already printed via Module.print
+                    console.log('Execution failed with code:', result);
+                }
+            } catch (error) {
+                appendOutput('Execution error: ' + error.message);
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+
+        function appendOutput(text) {
+            const output = document.getElementById('output');
+            output.textContent += text + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function loadExample(exampleName) {
+            const editor = document.getElementById('editor');
+            if (examples[exampleName]) {
+                editor.value = examples[exampleName];
+                clearOutput();
+                appendOutput('Loaded example: ' + exampleName + '\n');
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault();
+                runCode();
+            }
+        });
+
+        // Tab key in editor
+        document.getElementById('editor').addEventListener('keydown', function(event) {
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        // Load the WebAssembly module
+        console.log('Loading Orus WebAssembly...');
+        const script = document.createElement('script');
+        script.src = 'orus-simple.js';
+        script.onload = function() {
+            console.log('Orus script loaded successfully');
+        };
+        script.onerror = function() {
+            console.error('Failed to load Orus script');
+            document.getElementById('status').textContent = 'Failed to load';
+            document.getElementById('status').className = 'error';
+        };
+        document.head.appendChild(script);
+    </script>
 </body>
 </html>
