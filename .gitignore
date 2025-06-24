@@ -1,0 +1,14 @@
+.vscode
+build/
+# macOS metadata
+.DS_Store
+
+# build artifacts
+orusc
+
+# image assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+

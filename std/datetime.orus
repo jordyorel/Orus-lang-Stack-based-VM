@@ -1,0 +1,221 @@
+// Standard datetime utilities inspired by Python
+
+pub struct Date {
+    year: i32,
+    month: i32,
+    day: i32,
+}
+
+pub struct Time {
+    hour: i32,
+    minute: i32,
+    second: i32,
+    microsecond: i32,
+}
+
+pub struct DateTime {
+    date: Date,
+    time: Time,
+}
+
+pub struct TimeDelta {
+    seconds: i64,
+}
+
+fn is_leap_year(year: i32) -> bool {
+    if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0) {
+        return true
+    }
+    return false
+}
+
+fn days_in_month(year: i32, month: i32) -> i32 {
+    let days: [i32; 12] = [31,28,31,30,31,30,31,31,30,31,30,31]
+    let d = days[month - 1 as i32]
+    if month == 2 as i32 and is_leap_year(year) {
+        return 29 as i32
+    }
+    return d
+}
+
+// Convert a DateTime to seconds since the Unix epoch
+pub fn timestamp(dt: DateTime) -> f64 {
+    let mut days: i64 = 0
+    let mut y: i32 = 1970
+    while y < dt.date.year {
+        if is_leap_year(y) {
+            days = days + 366
+        } else {
+            days = days + 365
+        }
+        y = y + 1 as i32
+    }
+    let mut m: i32 = 1
+    while m < dt.date.month {
+        days = days + (days_in_month(dt.date.year, m) as i64)
+        m = m + 1 as i32
+    }
+    days = days + (dt.date.day - 1 as i32)
+    let secs: i64 = days * 86400 + (dt.time.hour as i64) * 3600 + (dt.time.minute as i64) * 60 + dt.time.second as i64
+    return (secs as f64) + (dt.time.microsecond as f64) / 1000000.0
+}
+
+// Build a DateTime from a Unix timestamp (seconds since epoch)
+pub fn from_timestamp(ts: f64) -> DateTime {
+    let mut seconds: i64 = ts as i64
+    let frac: f64 = ts - (seconds as f64)
+    let micro: i32 = (frac * 1000000.0) as i32
+    let second: i32 = (seconds % 60) as i32
+    let minute: i32 = ((seconds / 60) % 60) as i32
+    let hour: i32 = ((seconds / 3600) % 24) as i32
+    let mut days: i64 = seconds / 86400
+    let mut year: i32 = 1970
+    while true {
+        let mut year_days: i64 = 365 as i64
+        if is_leap_year(year) {
+            year_days = 366 as i64
+        }
+        if days >= year_days {
+            days = days - year_days
+            year = year + 1 as i32
+        } else {
+            break
+        }
+    }
+    let mut month: i32 = 1
+    while true {
+        let dim: i64 = days_in_month(year, month) as i64
+        if days >= dim {
+            days = days - dim
+            month = month + 1 as i32
+        } else {
+            break
+        }
+    }
+    let day: i32 = (days + 1) as i32
+    return DateTime{
+        date: Date{ year: year, month: month, day: day },
+        time: Time{ hour: hour, minute: minute, second: second, microsecond: micro },
+    }
+}
+
+pub fn now() -> DateTime {
+    return from_timestamp(timestamp() as f64)
+}
+
+pub fn utcnow() -> DateTime {
+    return from_timestamp(timestamp() as f64)
+}
+
+fn pad2(n: i32) -> string {
+    return n < (10 as i32) ? "0" + n : "" + n
+}
+
+fn pad4(n: i32) -> string {
+    return n < (10 as i32) ? "000" + n : n < (100 as i32) ? "00" + n : n < (1000 as i32) ? "0" + n : "" + n
+}
+
+fn pad6(n: i32) -> string {
+    return n < (10 as i32) ? "00000" + n : n < (100 as i32) ? "0000" + n : n < (1000 as i32) ? "000" + n : n < (10000 as i32) ? "00" + n : n < (100000 as i32) ? "0" + n : "" + n
+}
+
+// Basic strftime style formatting supporting %Y %m %d %H %M %S
+pub fn format(dt: DateTime, fmt: string) -> string {
+    let mut out = ""
+    let mut i: i32 = 0
+    while i < len(fmt) {
+        let ch = substring(fmt, i, 1 as i32)
+        if ch == "%" {
+            let code = substring(fmt, i + 1 as i32, 1 as i32)
+            out = out + (
+                code == "Y" ? pad4(dt.date.year)
+                : code == "m" ? pad2(dt.date.month)
+                : code == "d" ? pad2(dt.date.day)
+                : code == "H" ? pad2(dt.time.hour)
+                : code == "M" ? pad2(dt.time.minute)
+                : code == "S" ? pad2(dt.time.second)
+                : code == "f" ? pad6(dt.time.microsecond)
+                : code
+            )
+            i = i + 2 as i32
+        } else {
+            out = out + ch
+            i = i + 1 as i32
+        }
+    }
+    return out
+}
+
+// Parse a datetime string according to the given format
+pub fn parse(text: string, fmt: string) -> DateTime {
+    let mut year: i32 = 1970
+    let mut month: i32 = 1
+    let mut day: i32 = 1
+    let mut hour: i32 = 0
+    let mut minute: i32 = 0
+    let mut second: i32 = 0
+    let mut micro: i32 = 0
+    let mut i_fmt: i32 = 0
+    let mut i_txt: i32 = 0
+    while i_fmt < len(fmt) {
+        let ch = substring(fmt, i_fmt, 1 as i32)
+        if ch == "%" {
+            let code = substring(fmt, i_fmt + 1 as i32, 1 as i32)
+            if code == "Y" {
+                let part = substring(text, i_txt, 4 as i32)
+                year = int(part)
+                i_txt = i_txt + 4 as i32
+            } else {
+                let segLen: i32 = code == "f" ? 6 as i32 : 2 as i32
+                let part = substring(text, i_txt, segLen)
+                let val = int(part)
+                if code == "m" {
+                    month = val
+                } elif code == "d" {
+                    day = val
+                } elif code == "H" {
+                    hour = val
+                } elif code == "M" {
+                    minute = val
+                } elif code == "S" {
+                    second = val
+                } elif code == "f" {
+                    micro = val
+                }
+                i_txt = i_txt + segLen
+            }
+            i_fmt = i_fmt + 2 as i32
+        } else {
+            i_fmt = i_fmt + 1 as i32
+            i_txt = i_txt + 1 as i32
+        }
+    }
+    return DateTime{
+        date: Date{ year: year, month: month, day: day },
+        time: Time{ hour: hour, minute: minute, second: second, microsecond: micro },
+    }
+}
+
+pub fn date(dt: DateTime) -> Date {
+    return dt.date
+}
+
+pub fn time(dt: DateTime) -> Time {
+    return dt.time
+}
+
+pub fn to_string(dt: DateTime) -> string {
+    let base = format(dt, "%Y-%m-%d %H:%M:%S")
+    return dt.time.microsecond != 0 as i32 ? base + "." + pad6(dt.time.microsecond) : base
+}
+
+pub fn DateTime_to_string(dt: DateTime) -> string {
+    return to_string(dt)
+}
+
+impl DateTime {
+    fn to_string(self) -> string {
+        return to_string(self)
+    }
+}
+
