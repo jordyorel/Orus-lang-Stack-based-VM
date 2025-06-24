@@ -550,7 +550,8 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     } else if ((typesEqual(leftType, rightType) && leftType->kind == TYPE_GENERIC) ||
                                (typesEqual(leftType, rightType) &&
                                 (leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 ||
-                                 leftType->kind == TYPE_U32 || leftType->kind == TYPE_F64))) {
+                                 leftType->kind == TYPE_U32 || leftType->kind == TYPE_U64 ||
+                                 leftType->kind == TYPE_F64))) {
                         node->valueType = leftType;
                         node->data.operation.convertLeft = false;
                         node->data.operation.convertRight = false;
@@ -578,7 +579,8 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     if ((typesEqual(leftType, rightType) && leftType->kind == TYPE_GENERIC) ||
                         (typesEqual(leftType, rightType) &&
                          (leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 ||
-                          leftType->kind == TYPE_U32 || leftType->kind == TYPE_F64))) {
+                          leftType->kind == TYPE_U32 || leftType->kind == TYPE_U64 ||
+                          leftType->kind == TYPE_F64))) {
                         node->valueType = leftType;
                         node->data.operation.convertLeft = false;
                         node->data.operation.convertRight = false;
@@ -602,7 +604,8 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     }
                     if ((typesEqual(leftType, rightType) && leftType->kind == TYPE_GENERIC) ||
                         (typesEqual(leftType, rightType) &&
-                         (leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 || leftType->kind == TYPE_U32))) {
+                         (leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 ||
+                          leftType->kind == TYPE_U32 || leftType->kind == TYPE_U64))) {
                         node->valueType = leftType;
                         node->data.operation.convertLeft = false;
                         node->data.operation.convertRight = false;
@@ -613,7 +616,7 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                         node->data.operation.convertRight = rightType->kind != TYPE_I64;
                     } else {
                         error(compiler,
-                              "Modulo operands must both be i32, i64 or u32.");
+                              "Modulo operands must be i32, i64, u32 or u64.");
                         return;
                     }
                     break;
@@ -621,21 +624,42 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
 
                 case TOKEN_BIT_AND:
                 case TOKEN_BIT_OR:
-                case TOKEN_BIT_XOR:
-                case TOKEN_SHIFT_LEFT:
-                case TOKEN_SHIFT_RIGHT: {
+                case TOKEN_BIT_XOR: {
                     if (!requireConstraint(compiler, leftType, CONSTRAINT_NUMERIC, &node->data.operation.operator) ||
                         !requireConstraint(compiler, rightType, CONSTRAINT_NUMERIC, &node->data.operation.operator)) {
                         return;
                     }
                     if (!typesEqual(leftType, rightType) ||
-                        !(leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 || leftType->kind == TYPE_U32)) {
+                        !(leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 ||
+                          leftType->kind == TYPE_U32 || leftType->kind == TYPE_U64)) {
                         error(compiler, "Bitwise operands must be the same integer type.");
                         return;
                     }
                     node->valueType = leftType;
                     node->data.operation.convertLeft = false;
                     node->data.operation.convertRight = false;
+                    break;
+                }
+
+                case TOKEN_SHIFT_LEFT:
+                case TOKEN_SHIFT_RIGHT: {
+                    if (!requireConstraint(compiler, leftType, CONSTRAINT_NUMERIC, &node->data.operation.operator) ||
+                        !requireConstraint(compiler, rightType, CONSTRAINT_NUMERIC, &node->data.operation.operator)) {
+                        return;
+                    }
+                    if (!(leftType->kind == TYPE_I32 || leftType->kind == TYPE_I64 ||
+                          leftType->kind == TYPE_U32 || leftType->kind == TYPE_U64)) {
+                        error(compiler, "Left operand of shift must be an integer.");
+                        return;
+                    }
+                    if (!(rightType->kind == TYPE_I32 || rightType->kind == TYPE_I64 ||
+                          rightType->kind == TYPE_U32 || rightType->kind == TYPE_U64)) {
+                        error(compiler, "Shift amount must be an integer.");
+                        return;
+                    }
+                    node->valueType = leftType;
+                    node->data.operation.convertLeft = false;
+                    node->data.operation.convertRight = rightType->kind != leftType->kind;
                     break;
                 }
 
@@ -724,6 +748,7 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     if (operandType->kind != TYPE_I32 &&
                         operandType->kind != TYPE_I64 &&
                         operandType->kind != TYPE_U32 &&
+                        operandType->kind != TYPE_U64 &&
                         operandType->kind != TYPE_F64 &&
                         operandType->kind != TYPE_GENERIC) {
                         error(compiler,
@@ -744,7 +769,8 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     if (!requireConstraint(compiler, operandType, CONSTRAINT_NUMERIC, &node->data.operation.operator)) {
                         return;
                     }
-                    if (operandType->kind != TYPE_I32 && operandType->kind != TYPE_I64 && operandType->kind != TYPE_U32) {
+                    if (operandType->kind != TYPE_I32 && operandType->kind != TYPE_I64 &&
+                        operandType->kind != TYPE_U32 && operandType->kind != TYPE_U64) {
                         error(compiler, "Bitwise not operand must be an integer.");
                         return;
                     }
@@ -2460,6 +2486,14 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         else if (rightType->kind == TYPE_U32)
                             writeOp(compiler, OP_U32_TO_I64);
                         break;
+                    case TYPE_U64:
+                        if (rightType->kind == TYPE_I32)
+                            writeOp(compiler, OP_I32_TO_U64);
+                        else if (rightType->kind == TYPE_U32)
+                            writeOp(compiler, OP_U32_TO_U64);
+                        else if (rightType->kind == TYPE_I64)
+                            writeOp(compiler, OP_I64_TO_U64);
+                        break;
                     case TYPE_STRING:
                         switch (rightType->kind) {
                             case TYPE_I32:
@@ -2652,6 +2686,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_BIT_AND_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_BIT_AND_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_BIT_AND_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_BIT_AND_U64); break;
                         default:
                             error(compiler, "Bitwise AND not supported for this type.");
                             return;
@@ -2662,6 +2697,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_BIT_OR_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_BIT_OR_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_BIT_OR_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_BIT_OR_U64); break;
                         default:
                             error(compiler, "Bitwise OR not supported for this type.");
                             return;
@@ -2672,6 +2708,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_BIT_XOR_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_BIT_XOR_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_BIT_XOR_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_BIT_XOR_U64); break;
                         default:
                             error(compiler, "Bitwise XOR not supported for this type.");
                             return;
@@ -2682,6 +2719,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_SHIFT_LEFT_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_SHIFT_LEFT_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_SHIFT_LEFT_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_SHIFT_LEFT_U64); break;
                         default:
                             error(compiler, "Left shift not supported for this type.");
                             return;
@@ -2692,6 +2730,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_SHIFT_RIGHT_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_SHIFT_RIGHT_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_SHIFT_RIGHT_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_SHIFT_RIGHT_U64); break;
                         default:
                             error(compiler, "Right shift not supported for this type.");
                             return;
@@ -2882,6 +2921,7 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                         case TYPE_I32: writeOp(compiler, OP_BIT_NOT_I32); break;
                         case TYPE_I64: writeOp(compiler, OP_BIT_NOT_I64); break;
                         case TYPE_U32: writeOp(compiler, OP_BIT_NOT_U32); break;
+                        case TYPE_U64: writeOp(compiler, OP_BIT_NOT_U64); break;
                         default:
                             error(compiler, "Bitwise not not supported for this type.");
                             return;

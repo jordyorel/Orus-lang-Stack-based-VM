@@ -823,6 +823,15 @@ static InterpretResult run() {
             case OP_BIT_XOR_U32:
                 bitwiseOpU32(&vm, '^', &result);
                 break;
+            case OP_BIT_AND_U64:
+                bitwiseOpU64(&vm, '&', &result);
+                break;
+            case OP_BIT_OR_U64:
+                bitwiseOpU64(&vm, '|', &result);
+                break;
+            case OP_BIT_XOR_U64:
+                bitwiseOpU64(&vm, '^', &result);
+                break;
             case OP_BIT_NOT_I32:
                 bitwiseNotI32(&vm, &result);
                 break;
@@ -831,6 +840,9 @@ static InterpretResult run() {
                 break;
             case OP_BIT_NOT_U32:
                 bitwiseNotU32(&vm, &result);
+                break;
+            case OP_BIT_NOT_U64:
+                bitwiseNotU64(&vm, &result);
                 break;
             case OP_SHIFT_LEFT_I32:
                 shiftLeftI32(&vm, &result);
@@ -841,6 +853,9 @@ static InterpretResult run() {
             case OP_SHIFT_LEFT_U32:
                 shiftLeftU32(&vm, &result);
                 break;
+            case OP_SHIFT_LEFT_U64:
+                shiftLeftU64(&vm, &result);
+                break;
             case OP_SHIFT_RIGHT_I32:
                 shiftRightI32(&vm, &result);
                 break;
@@ -849,6 +864,9 @@ static InterpretResult run() {
                 break;
             case OP_SHIFT_RIGHT_U32:
                 shiftRightU32(&vm, &result);
+                break;
+            case OP_SHIFT_RIGHT_U64:
+                shiftRightU64(&vm, &result);
                 break;
 
             // Comparison operations

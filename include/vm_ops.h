@@ -593,6 +593,17 @@ static inline void bitwiseOpU32(VM* vm, char op, InterpretResult* result) {
     }
 }
 
+static inline void bitwiseOpU64(VM* vm, char op, InterpretResult* result) {
+    uint64_t b = AS_U64(vmPop(vm));
+    uint64_t a = AS_U64(vmPop(vm));
+    switch (op) {
+        case '&': vmPush(vm, U64_VAL(a & b)); break;
+        case '|': vmPush(vm, U64_VAL(a | b)); break;
+        case '^': vmPush(vm, U64_VAL(a ^ b)); break;
+        default: fprintf(stderr, "Unknown bitwise op\n"); *result = INTERPRET_RUNTIME_ERROR; return;
+    }
+}
+
 static inline void bitwiseNotI32(VM* vm, InterpretResult* result) {
     int32_t a = AS_I32(vmPop(vm));
     vmPush(vm, I32_VAL(~a));
@@ -608,40 +619,85 @@ static inline void bitwiseNotU32(VM* vm, InterpretResult* result) {
     vmPush(vm, U32_VAL(~a));
 }
 
+static inline void bitwiseNotU64(VM* vm, InterpretResult* result) {
+    uint64_t a = AS_U64(vmPop(vm));
+    vmPush(vm, U64_VAL(~a));
+}
+
 static inline void shiftLeftI32(VM* vm, InterpretResult* result) {
     int32_t b = AS_I32(vmPop(vm));
     int32_t a = AS_I32(vmPop(vm));
-    vmPush(vm, I32_VAL(a << b));
+    if (b < 0) {
+        vmRuntimeError("Negative shift amount.");
+        *result = INTERPRET_RUNTIME_ERROR;
+        return;
+    }
+    uint32_t shift = ((uint32_t)b) & 31u;
+    vmPush(vm, I32_VAL(a << shift));
 }
 
 static inline void shiftRightI32(VM* vm, InterpretResult* result) {
     int32_t b = AS_I32(vmPop(vm));
     int32_t a = AS_I32(vmPop(vm));
-    vmPush(vm, I32_VAL(a >> b));
+    if (b < 0) {
+        vmRuntimeError("Negative shift amount.");
+        *result = INTERPRET_RUNTIME_ERROR;
+        return;
+    }
+    uint32_t shift = ((uint32_t)b) & 31u;
+    vmPush(vm, I32_VAL(a >> shift));
 }
 
 static inline void shiftLeftI64(VM* vm, InterpretResult* result) {
     int64_t b = vmPopI64(vm);
     int64_t a = vmPopI64(vm);
-    vmPushI64(vm, a << b);
+    if (b < 0) {
+        vmRuntimeError("Negative shift amount.");
+        *result = INTERPRET_RUNTIME_ERROR;
+        return;
+    }
+    uint32_t shift = ((uint64_t)b) & 63u;
+    vmPushI64(vm, a << shift);
 }
 
 static inline void shiftRightI64(VM* vm, InterpretResult* result) {
     int64_t b = vmPopI64(vm);
     int64_t a = vmPopI64(vm);
-    vmPushI64(vm, a >> b);
+    if (b < 0) {
+        vmRuntimeError("Negative shift amount.");
+        *result = INTERPRET_RUNTIME_ERROR;
+        return;
+    }
+    uint32_t shift = ((uint64_t)b) & 63u;
+    vmPushI64(vm, a >> shift);
 }
 
 static inline void shiftLeftU32(VM* vm, InterpretResult* result) {
     uint32_t b = AS_U32(vmPop(vm));
     uint32_t a = AS_U32(vmPop(vm));
-    vmPush(vm, U32_VAL(a << b));
+    uint32_t shift = b & 31u;
+    vmPush(vm, U32_VAL(a << shift));
 }
 
 static inline void shiftRightU32(VM* vm, InterpretResult* result) {
     uint32_t b = AS_U32(vmPop(vm));
     uint32_t a = AS_U32(vmPop(vm));
-    vmPush(vm, U32_VAL(a >> b));
+    uint32_t shift = b & 31u;
+    vmPush(vm, U32_VAL(a >> shift));
+}
+
+static inline void shiftLeftU64(VM* vm, InterpretResult* result) {
+    uint64_t b = AS_U64(vmPop(vm));
+    uint64_t a = AS_U64(vmPop(vm));
+    uint32_t shift = (uint32_t)b & 63u;
+    vmPush(vm, U64_VAL(a << shift));
+}
+
+static inline void shiftRightU64(VM* vm, InterpretResult* result) {
+    uint64_t b = AS_U64(vmPop(vm));
+    uint64_t a = AS_U64(vmPop(vm));
+    uint32_t shift = (uint32_t)b & 63u;
+    vmPush(vm, U64_VAL(a >> shift));
 }
 
 static inline void moduloOpU64(VM* vm, InterpretResult* result) {
