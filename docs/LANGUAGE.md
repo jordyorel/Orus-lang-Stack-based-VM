@@ -143,7 +143,7 @@ This is a block comment.
 
 Orus supports common arithmetic (`+`, `-`, `*`, `/`, `%`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`), and logical operators (`and`, `or`, `not`). Compound assignments like `+=` and `-=` are also available.
 
-Bitwise operators work on integers: `&`, `|`, `^`, `!`, `<<`, and `>>`. The shift right operator performs arithmetic shifting for signed types and logical shifting for `u32`. Operands must be the same integer type.
+Bitwise operators work on integers: `&`, `|`, `^`, `!`, `<<`, and `>>`. The shift right operator performs arithmetic shifting for signed types and logical shifting for `u32`. Shift amount values may be any integer type and are automatically converted to match the left operand, which determines the result type.
 
 Casting between numeric types must be explicit with `as`.
 
