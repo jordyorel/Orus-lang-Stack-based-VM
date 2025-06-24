@@ -37,8 +37,9 @@ include:
   to `bool`.
 - All primitive values can be converted to `string` with `as string`. Casting
   from `string` or `nil` to numeric types is disallowed.
-- Integer literals automatically use `i32`, `i64` or `u64` based on value. A
-  trailing `u` suffix forces an unsigned type.
+- Integer literals default to `i32`. Larger values pick `i64` or `u64` as needed.
+  A trailing `u` or explicit suffix such as `i32`, `i64`, `u32`, `u64` or `f64`
+  sets the type directly.
 
 The repository contains the interpreter sources and a large suite of example programs. A quick tour of the syntax lives in [`docs/LANGUAGE.md`](docs/LANGUAGE.md) and a step-by-step introduction is provided in [`docs/TUTORIAL.md`](docs/TUTORIAL.md). Notes on generics appear in [`docs/GENERICS.md`](docs/GENERICS.md) and more examples are spread throughout the test suite. See [`docs/TESTS_OVERVIEW.md`](docs/TESTS_OVERVIEW.md) for a list of categories. A potential compilation roadmap is outlined in [`docs/COMPILATION_ROADMAP.md`](docs/COMPILATION_ROADMAP.md). For a summary of built-in functions consult [`docs/BUILTINS.md`](docs/BUILTINS.md).
 

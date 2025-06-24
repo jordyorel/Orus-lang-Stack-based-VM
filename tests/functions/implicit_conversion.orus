@@ -1,0 +1,22 @@
+// Automatic numeric conversion in function calls
+fn takes_i64(x: i64) -> i64 {
+    return x * 2i64
+}
+
+fn takes_f64(n: f64) -> f64 {
+    return n / 2.0
+}
+
+fn main() {
+    let a: i32 = 5
+    let b: u32 = 7u32
+    let c: i64 = 9i64
+    let d: f64 = 3.5
+
+    print(takes_i64(a))
+    print(takes_i64(b))
+    print(takes_i64(c))
+    print(takes_f64(a))
+    print(takes_f64(b))
+    print(takes_f64(d))
+}

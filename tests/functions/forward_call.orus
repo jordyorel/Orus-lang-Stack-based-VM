@@ -1,6 +1,6 @@
 // Test calling a function before it is defined
 fn main() {
-    print(foo(3 as i32))
+    print(foo(3))
 }
 
 fn foo(x: i32) -> i32 {

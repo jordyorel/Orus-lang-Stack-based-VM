@@ -79,18 +79,20 @@ fn increment() {
 - `void` – absence of a return value
 - `nil` – explicit nil literal
 
-Integer literals are typed automatically based on their value. Numbers
-that fit within the 32‑bit signed range become `i32`. Larger values up
-to the 64‑bit signed limit become `i64`. Values beyond that are treated
-as `u64`. Append a trailing `u` to force an unsigned type
-(`u32` or `u64`).
+Integer literals default to `i32` when the value fits in 32 bits. Larger
+values up to the 64‑bit signed limit become `i64` and anything beyond
+that uses `u64`. Append a trailing `u` or an explicit suffix such as
+`i32`, `i64`, `u32`, `u64` or `f64` to choose the exact type.
 
 ```orus
 let flag: bool = true
 let text = "hello"       // type inference
 ```
 
-Numeric types never convert implicitly. Use `as` to cast:
+Numeric types never convert implicitly except when calling a function. When a
+value is passed to a function or builtin, it will automatically be converted to
+the parameter's numeric type if possible. In all other contexts use `as` to
+cast explicitly:
 
 ```orus
 let a: i32 = -5
@@ -114,8 +116,9 @@ let c: i32 = big as i32
 ### Numeric literals
 
 Integer literals are written in decimal by default. Use `0x` to specify a
-hexadecimal value. Underscores may separate digits for readability and an
-optional trailing `u` marks an unsigned literal.
+hexadecimal value. Underscores may separate digits for readability. A
+suffix like `i32`, `i64`, `u32`, `u64`, `f64` or just `u` chooses the
+literal's type explicitly.
 
 ```orus
 let dec = 42

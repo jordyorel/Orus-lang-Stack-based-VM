@@ -1,5 +1,5 @@
 fn main() {
-    let count: i64 = 1
+    let count: i32 = 1
     match count {
         0 => print("zero"),
         1 => print("one"),

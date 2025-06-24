@@ -80,6 +80,35 @@ static void emitForLoop(Compiler* compiler, ASTNode* node);
 void disassembleChunk(Chunk* chunk, const char* name);
 static void predeclareFunction(Compiler* compiler, ASTNode* node);
 
+static bool isNumericKind(TypeKind kind) {
+    return kind == TYPE_I32 || kind == TYPE_I64 ||
+           kind == TYPE_U32 || kind == TYPE_U64 ||
+           kind == TYPE_F64;
+}
+
+static opCode conversionOp(TypeKind from, TypeKind to) {
+    if (from == to) return OP_RETURN; // unused placeholder when no conversion
+    if (from == TYPE_I32 && to == TYPE_F64) return OP_I32_TO_F64;
+    if (from == TYPE_U32 && to == TYPE_F64) return OP_U32_TO_F64;
+    if (from == TYPE_I32 && to == TYPE_U32) return OP_I32_TO_U32;
+    if (from == TYPE_U32 && to == TYPE_I32) return OP_U32_TO_I32;
+    if (from == TYPE_I32 && to == TYPE_I64) return OP_I32_TO_I64;
+    if (from == TYPE_U32 && to == TYPE_I64) return OP_U32_TO_I64;
+    if (from == TYPE_I64 && to == TYPE_I32) return OP_I64_TO_I32;
+    if (from == TYPE_I64 && to == TYPE_U32) return OP_I64_TO_U32;
+    if (from == TYPE_I32 && to == TYPE_U64) return OP_I32_TO_U64;
+    if (from == TYPE_U32 && to == TYPE_U64) return OP_U32_TO_U64;
+    if (from == TYPE_U64 && to == TYPE_I32) return OP_U64_TO_I32;
+    if (from == TYPE_U64 && to == TYPE_U32) return OP_U64_TO_U32;
+    if (from == TYPE_U64 && to == TYPE_F64) return OP_U64_TO_F64;
+    if (from == TYPE_F64 && to == TYPE_U64) return OP_F64_TO_U64;
+    if (from == TYPE_I64 && to == TYPE_U64) return OP_I64_TO_U64;
+    if (from == TYPE_U64 && to == TYPE_I64) return OP_U64_TO_I64;
+    if (from == TYPE_I64 && to == TYPE_F64) return OP_I64_TO_F64;
+    if (from == TYPE_F64 && to == TYPE_I64) return OP_F64_TO_I64;
+    return OP_RETURN; // indicates unsupported
+}
+
 static void deduceGenerics(Type* expected, Type* actual,
                            ObjString** names, Type** subs, int count) {
     if (!expected || !actual) return;
@@ -1925,6 +1954,9 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 argIt = argIt->next;
             }
 
+            node->data.call.convertArgs =
+                (bool*)calloc(node->data.call.argCount, sizeof(bool));
+
             for (int i = 0; i < funcType->info.function.paramCount; i++) {
                 Type* expected = funcType->info.function.paramTypes[i];
                 if (gcount > 0 && i < acount) {
@@ -1943,18 +1975,32 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                         variableTypes[argNodes[i]->data.variable.index] = expected;
                     }
                 }
-                if (i >= acount || !typesEqual(expected, argNodes[i]->valueType)) {
+                if (i >= acount) {
                     const char* expectedType = getTypeName(expected->kind);
-                    const char* actualType = argNodes[i] && argNodes[i]->valueType ? getTypeName(argNodes[i]->valueType->kind) : "(none)";
-                    emitTypeMismatchError(compiler, &node->data.call.name, expectedType, actualType);
+                    const char* actualType = "(none)";
+                    emitTypeMismatchError(compiler, &node->data.call.name,
+                                         expectedType, actualType);
                     return;
+                }
+
+                if (!typesEqual(expected, argNodes[i]->valueType)) {
+                    opCode op = conversionOp(argNodes[i]->valueType->kind,
+                                             expected->kind);
+                    if (op != OP_RETURN && isNumericKind(expected->kind) &&
+                        isNumericKind(argNodes[i]->valueType->kind)) {
+                        node->data.call.convertArgs[i] = true;
+                    } else {
+                        const char* expectedType = getTypeName(expected->kind);
+                        const char* actualType = argNodes[i] && argNodes[i]->valueType ? getTypeName(argNodes[i]->valueType->kind) : "(none)";
+                        emitTypeMismatchError(compiler, &node->data.call.name,
+                                             expectedType, actualType);
+                        return;
+                    }
                 }
             }
 
             Type* returnType = substituteGenerics(funcType->info.function.returnType,
                                                  gnames, gsubs, gcount);
-
-            node->data.call.convertArgs = (bool*)calloc(node->data.call.argCount, sizeof(bool));
             node->valueType = returnType;
             break;
         }
@@ -3594,7 +3640,12 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
                 if (compiler->hadError) return;
 
                 if (node->data.call.convertArgs[i]) {
-                    /* conversions not implemented */
+                    Type* funcType = variableTypes[node->data.call.index];
+                    if (!funcType || funcType->kind != TYPE_FUNCTION) continue;
+                    Type* expected = funcType->info.function.paramTypes[i];
+                    opCode op = conversionOp(args[i]->valueType->kind,
+                                             expected->kind);
+                    if (op != OP_RETURN) writeOp(compiler, op);
                 }
             }
 

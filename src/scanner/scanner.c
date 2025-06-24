@@ -123,6 +123,17 @@ static bool is_hex_digit(char c) {
            (c >= 'A' && c <= 'F');
 }
 
+// Peek ahead to see if the upcoming characters match a literal string.
+static bool match_sequence(const char* seq) {
+    const char* p = scanner.current;
+    while (*seq != '\0') {
+        if (*p != *seq) return false;
+        p++;
+        seq++;
+    }
+    return true;
+}
+
 /**
  * Determine if the scanner has consumed all input.
  *
@@ -375,8 +386,18 @@ static Token number() {
         }
     }
 
-    // Optional unsigned suffix
-    if (peek() == 'u' || peek() == 'U') {
+    // Optional type suffixes: i32, i64, u32, u64 or f64. Also retain plain 'u'
+    if (match_sequence("i32")) {
+        advance(); advance(); advance();
+    } else if (match_sequence("i64")) {
+        advance(); advance(); advance();
+    } else if (match_sequence("u32")) {
+        advance(); advance(); advance();
+    } else if (match_sequence("u64")) {
+        advance(); advance(); advance();
+    } else if (match_sequence("f64")) {
+        advance(); advance(); advance();
+    } else if (peek() == 'u' || peek() == 'U') {
         advance();
     }
 
