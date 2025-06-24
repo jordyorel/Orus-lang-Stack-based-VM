@@ -1,177 +1,369 @@
+# Orus Language Development Roadmap
 
-# Orus Language Roadmap
+**Goal**: Transform Orus from an experimental language into a production-ready programming language suitable for real-world applications and widespread adoption.
 
-This document consolidates the development roadmaps for the Orus language, tracking progress and version increments across multiple development streams.
-
-**Current Version: 0.7.0**
-
-## Version History
-
-- **0.1.0**: Initial release with basic language features  
-- **0.5.0**: Current version with generics, modules, error handling, and garbage collection  
-- **0.5.1**: Added `input()` builtin for basic user input
-- **0.5.2**: Improved diagnostics for repeated module imports
-- **0.5.3**: Introduced `std/math` library with core math utilities
-- **0.5.4**: Added `const` declarations, embedded standard library and enhanced casting rules
-- **0.6.0**: Cross-module generics and expanded standard library
-- **0.6.1**: Improved error reporting for generics
-- **0.6.2**: Suggestion hints for undefined names and integrated generics tutorial
-- **0.7.0**: Full generics implementation
-
-## Completed Major Features
-
-| Feature                | Description                                       | Version Impact     |
-|------------------------|---------------------------------------------------|--------------------|
-| ✅ Garbage Collection   | Mark-sweep GC replacing manual memory management | 0.3.0 → 0.4.0      |
-| ✅ Generic Types (Basic)| Generic functions and structs with type parameters| 0.2.0 → 0.3.0      |
-| ✅ Module System        | Modules and `use` statements                     | 0.1.0 → 0.2.0      |
-| ✅ Error Handling       | Try/catch blocks for exception handling          | 0.4.0 → 0.5.0      |
-| ✅ Dynamic Arrays       | Arrays with push, pop, and len operations        | Minor feature      |
-| ✅ User Input           | input() builtin for reading from stdin           | 0.5.0 → 0.5.1      |
+**Current Version**: 0.2.0 (revised from previous 0.7.0 for conservative versioning)  
+**Target Production Version**: 1.0.0  
+**Estimated Timeline**: 24-36 months
 
 ---
 
-## Pending Features and Version Targets
+## Conservative Versioning Philosophy
 
-### 1. Generics Enhancements
+This roadmap adopts a **conservative versioning approach** where:
 
-**Status**: Partially implemented (Basic functionality available)
+- **Version 1.0.0** = True production readiness with complete ecosystem
+- **0.x versions** = Development milestones with increasing capability
+- **Current 0.2.0** = Honest assessment of production completeness
 
-| Task                              | Status           | Priority | Version Impact   |
-|-----------------------------------|------------------|----------|------------------|
-| Generic Forward Declarations      | ✅ Done          | High     | 0.5.0 → 0.6.0    |
-| Generic Constraints               | ✅ Done          | High     | 0.6.0 → 0.7.0    |
-| Improved Type Inference           | ✅ Done          | High     | Minor feature    |
-| Generic Arithmetic & Operators    | ✅ Done          | Medium   | Minor feature    |
-| Collection and Iterator Support   | ✅ Done          | Medium   | Minor feature    |
-| Enhanced Error Reporting          | ✅ Done          | Medium   | Minor feature    |
-| Cross-Module Generics             | ✅ Done          | Low      | Minor feature    |
-| Generics Documentation            | ✅ Done          | Low      | No impact        |
-| Full Generics Implementation      | ✅ Done          | High     | 0.7.0            |
-| Optimize Inference (Complex)      | ✅ Done          | High     | Minor feature    |
-| Edge Case Inference Tests         | ✅ Done          | High     | No impact        |
-| Debugging Guide                   | ✅ Done          | Medium   | Docs only        |
-| Advanced Generics Tutorial        | ✅ Done          | Low      | Docs only        |
-| Best Practices & Patterns         | ✅ Done          | Low      | Docs only        |
-| Example Code Snippets             | ✅ Done          | Low      | Docs only        |
-| Continuous Docs Updates           | ✅ Done          | Low      | No impact        |
+### Rationale for Conservative Versioning
 
----
+**Current State Reality Check:**
+- ✅ Strong language foundations (generics, GC, modules, error handling)
+- ❌ No file I/O operations
+- ❌ No package management
+- ❌ No network programming  
+- ❌ Minimal standard library
+- ❌ Basic tooling only
 
-### 3. Memory Management (Garbage Collection)
+**What 0.2.0 Represents:**
+- **Honest**: ~20-25% complete toward production
+- **Realistic**: Strong language foundations but missing ecosystem
 
-**Status**: ✅ Fully implemented
-
-| Task                          | Status     | Impact             |
-|-------------------------------|------------|--------------------|
-| Object Header Structure       | ✅ Complete| Core implementation|
-| Value Representation Changes  | ✅ Complete| Core implementation|
-| GC State and Integration      | ✅ Complete| Core implementation|
-| Mark & Sweep Phases           | ✅ Complete| Core implementation|
-| Final Testing & Tuning        | ✅ Complete| Core implementation|
+**Benefits of Conservative Versioning:**
+- Sets realistic expectations for users and contributors
+- Allows proper celebration of meaningful milestones
+- Prevents version inflation that diminishes the significance of 1.0
+- Aligns with semantic versioning principles for stability
 
 ---
 
-### 4. Built-in Functions and Standard Library
+## Current State Assessment
 
-**Status**: Initial runtime built-ins completed; standard library modules in planning
+### ✅ **Completed Major Features**
 
-The following built-in functions are implemented in the Orus runtime and available in every module:
+| Feature | Description | Status |
+|---------|-------------|---------|
+| **Static Typing** | Full type inference with `let`, generics support | ✅ Complete |
+| **Generics System** | Generic functions, structs, constraints, cross-module | ✅ Complete |
+| **Module System** | Modules with `use` statements and `pub` visibility | ✅ Complete |
+| **Error Handling** | Try/catch blocks for exception handling | ✅ Complete |
+| **Garbage Collection** | Mark-sweep GC with memory safety | ✅ Complete |
+| **Control Flow** | If/elif/else, loops, pattern matching | ✅ Complete |
+| **Arrays & Collections** | Dynamic arrays, basic collections | ✅ Complete |
 
-#### ✅ Core Built-ins (VM-level, implemented)
+### 📚 **Current Standard Library**
 
-- `print(values...)` – Formatted console output  
-- `len(value)` – Length of a string or array  
-- `substring(str, start, len)` – Extract part of a string  
-- `push(array, value)` / `pop(array)` – Dynamic array operations  
-- `range(start, end)` – Range generator for loops
-- `sum(array)` – Return sum of numeric values in array
-- `min(array)` / `max(array)` – Return min/max value from array
-- `sorted(array, reverse)` – Returns a new sorted array
-- `type_of(value)` / `is_type(value, name)` – Type inspection and checking
-- `input(prompt)` – Console input from user
-- `int(text)` / `float(text)` – Safe type conversion from string
-- `timestamp()` – Current UNIX timestamp
-- `module_name(path)` / `module_path(path)` – Introspection helpers
-- `native_pow(base, exp)` / `native_sqrt(x)` – C math wrappers
+#### ✅ **Available Modules**
+- **`std/math`**: Mathematical functions, constants (PI, E, TAU), trigonometric functions
+- **`std/random`**: Xoshiro128++ RNG with comprehensive random number generation
+- **`std/collections`**: Generic data structures (Map, Set)
+- **`std/datetime`**: Date/time handling capabilities
 
-#### 🧩 Next Built-ins (Planned for runtime inclusion)
+#### ✅ **Core Built-ins (VM-level)**
+- `print(values...)`, `len(value)`, `substring(str, start, len)`
+- `push(array, value)`, `pop(array)`, `range(start, end)`
+- `sum(array)`, `min(array)`, `max(array)`, `sorted(array, reverse)`
+- `type_of(value)`, `is_type(value, name)`, `input(prompt)`
+- `int(text)`, `float(text)`, `timestamp()`
+- `native_pow(base, exp)`, `native_sqrt(x)`
 
+### 🔧 **Current Tooling**
+- **Interpreter**: Full-featured REPL and script execution
+- **Project Mode**: Execute projects with `orus.json` manifests
+- **Build System**: Makefile-based build process
+- **Testing**: 209 comprehensive test files with automated runner
+
+---
+
+## Development Phases
+
+## Phase 1: Foundation Infrastructure (6-9 months)
+**Target Version: 0.3.0 - 0.4.0**
+
+### 🚀 **Priority 1: Essential I/O and System Integration**
+
+| Component | Description | Effort | Version |
+|-----------|-------------|---------|---------|
+| **File I/O** | Read/write files, directory operations | 3-4 weeks | 0.3.0 |
+| **Environment Variables** | Access and modify env vars | 1 week | 0.3.0 |
+| **Process Management** | Execute commands, get exit codes | 2-3 weeks | 0.3.0 |
+| **Command Line Arguments** | Parse argv, flags, options | 1-2 weeks | 0.3.0 |
+
+```orus
+// Target API examples
+use std::fs
+use std::env
+use std::process
+
+let content = fs::read_text("config.txt")?
+let home = env::get("HOME")
+let result = process::run("git", ["status"])
+```
+
+### 🔧 **Priority 2: Core Tooling Infrastructure**
+
+| Tool | Description | Effort | Version |
+|------|-------------|---------|---------|
+| **Interactive Debugger** | Breakpoints, variable inspection, step execution | 8-10 weeks | 0.3.0 |
+| **Code Formatter** | Consistent code style formatting | 4-5 weeks | 0.3.0 |
+| **Basic Linter** | Syntax checking, common mistake detection | 6-8 weeks | 0.4.0 |
+| **Language Server** | IDE integration via LSP | 10-12 weeks | 0.4.0 |
+
+### 📚 **Priority 3: Expanded Standard Library**
+
+| Module | Features | Effort | Version |
+|--------|----------|---------|---------|
+| **`std/io`** | File operations, path manipulation | 4-5 weeks | 0.3.0 |
+| **`std/strings`** | Advanced string processing, regex basics | 3-4 weeks | 0.3.0 |
+| **`std/json`** | JSON parsing and serialization | 3-4 weeks | 0.3.0 |
+| **`std/testing`** | Unit testing framework with assertions | 4-5 weeks | 0.3.0 |
+| **`std/logging`** | Structured logging with levels | 2-3 weeks | 0.4.0 |
+
+---
+
+## Phase 2: Developer Experience (6-12 months)
+**Target Version: 0.5.0 - 0.7.0**
+
+### 📦 **Priority 1: Package Management System**
+
+| Component | Description | Effort | Version |
+|-----------|-------------|---------|---------|
+| **Package Manager** | Dependency resolution, versioning | 12-16 weeks | 0.5.0 |
+| **Package Registry** | Central repository for packages | 8-10 weeks | 0.5.0 |
+| **Build System** | Project templates, build configurations | 6-8 weeks | 0.5.0 |
+| **Lock Files** | Reproducible builds, dependency locking | 3-4 weeks | 0.5.0 |
+
+```bash
+# Target CLI experience
+orus new my-project --template=web-server
+orus add http-client@1.2.0
+orus build --release
+orus test
+orus publish
+```
+
+### 🛠️ **Priority 2: Advanced Tooling**
+
+| Tool | Description | Effort | Version |
+|------|-------------|---------|---------|
+| **Performance Profiler** | CPU/memory profiling with flamegraphs | 8-10 weeks | 0.6.0 |
+| **Documentation Generator** | Auto-gen docs from code comments | 6-8 weeks | 0.6.0 |
+| **Code Coverage** | Test coverage analysis and reporting | 4-6 weeks | 0.6.0 |
+| **IDE Plugins** | VS Code, IntelliJ, Vim extensions | 10-12 weeks | 0.7.0 |
+
+### 🌐 **Priority 3: Network and Web Support**
+
+| Module | Features | Effort | Version |
+|--------|----------|---------|---------|
+| **`std/http`** | HTTP client/server, REST APIs | 8-10 weeks | 0.5.0 |
+| **`std/net`** | TCP/UDP sockets, networking primitives | 6-8 weeks | 0.6.0 |
+| **`std/crypto`** | Hashing, encryption, secure random | 6-8 weeks | 0.6.0 |
+| **`std/encoding`** | Base64, URL encoding, hex | 2-3 weeks | 0.5.0 |
+
+---
+
+## Phase 3: Production Features (6-12 months)
+**Target Version: 0.8.0 - 0.9.0**
+
+### ⚡ **Priority 1: Performance and Concurrency**
+
+| Feature | Description | Effort | Version |
+|---------|-------------|---------|---------|
+| **Async/Await** | Non-blocking I/O and concurrency | 16-20 weeks | 0.8.0 |
+| **Threading** | Native thread support with synchronization | 10-12 weeks | 0.8.0 |
+| **JIT Compilation** | Just-in-time compilation for hot paths | 20-24 weeks | 0.9.0 |
+| **Memory Optimization** | Improved GC, reduced allocations | 8-10 weeks | 0.8.0 |
+
+### 🏗️ **Priority 2: Production Operations**
+
+| Component | Features | Effort | Version |
+|-----------|----------|---------|---------|
+| **Configuration** | Config files, environment-based configs | 3-4 weeks | 0.8.0 |
+| **Monitoring** | Metrics, health checks, observability | 6-8 weeks | 0.8.0 |
+| **Error Handling** | Advanced error types, error chaining | 4-5 weeks | 0.8.0 |
+| **Deployment** | Docker support, deployment templates | 4-6 weeks | 0.9.0 |
+
+### 🗄️ **Priority 3: Data and Integration**
+
+| Module | Features | Effort | Version |
+|--------|----------|---------|---------|
+| **`std/database`** | SQL database connectivity | 10-12 weeks | 0.8.0 |
+| **`std/xml`** | XML parsing and generation | 4-5 weeks | 0.8.0 |
+| **`std/csv`** | CSV reading and writing | 2-3 weeks | 0.8.0 |
+| **`std/regex`** | Full regular expression support | 8-10 weeks | 0.8.0 |
+
+---
+
+## Phase 4: Ecosystem Maturity (Ongoing)
+**Target Version: 1.0.0+**
+
+### 🌍 **Community and Ecosystem**
+
+| Initiative | Description | Timeline |
+|------------|-------------|----------|
+| **Package Ecosystem** | 100+ quality community packages | 12-18 months |
+| **Documentation Site** | Comprehensive docs, tutorials, guides | 6-9 months |
+| **Community Forums** | Discord, forums, Stack Overflow presence | 3-6 months |
+| **Conferences/Talks** | Speaking at conferences, workshops | Ongoing |
+
+### 🎯 **Specialized Domains**
+
+| Domain | Libraries/Tools | Timeline |
+|--------|-----------------|----------|
+| **Web Development** | Web frameworks, templating, sessions | 12-18 months |
+| **Data Science** | NumPy-like arrays, data frames, plotting | 18-24 months |
+| **Systems Programming** | Low-level APIs, FFI, C interop | 12-18 months |
+| **Game Development** | Graphics, input handling, game loops | 18-24 months |
+
+---
+
+## Legacy Feature Status
+
+### 🧩 **Remaining Built-ins** (Next Phase)
 - `abs(x)` – Absolute value  
 - `round(x)` – Rounding of floats  
 - `any(array)` / `all(array)` – Truth aggregation  
 - `filter(array, fn)` – Higher-order filtering (requires function-as-value support)  
-- `map(array, fn)` – Transformation function (same as above)  
+- `map(array, fn)` – Transformation function (requires function-as-value support)
+
+### 📦 **Planned Standard Library Modules**
+| Module | Description | Target Version |
+|--------|-------------|----------------|
+| `std/functional` | `map`, `filter`, `reduce` | 0.6.0+ (depends on function support) |
 
 ---
 
-### 📦 Standard Library Modules (To be written in Orus)
+## Success Metrics
 
-Orus will include a set of standard library modules located in a `std/` directory. These will be loaded using the `use` statement:
+### **Technical Metrics**
+- **Performance**: 90% of Python performance for similar tasks
+- **Memory**: <50MB baseline memory usage
+- **Startup**: <100ms cold start time
+- **Test Coverage**: >95% standard library coverage
 
-```orus
-use std::math
-```
+### **Ecosystem Metrics**
+- **Packages**: 100+ packages in registry
+- **Documentation**: <30s average time to find answers
+- **Community**: 1000+ active developers
+- **Production Usage**: 10+ companies using in production
 
-| Module         | Description                                     | Target Version   |
-|----------------|-------------------------------------------------|------------------|
-| `std/math`       | `clamp`, `sqrt`, `average`, constants like `PI` | 0.5.3            |
-| `std/random`     | LCG `random`, `randint`, `uniform`, `choice`, `sample`, `shuffle` | 0.6.0            |
-| `std/collections`| Generic `Map`, `Set` and iterator utilities     | 0.6.0            |
-| `std/functional` | `map`, `filter`, `reduce`                       | 0.6.0+ (depends on function support) |
-| `std/datetime`   | `DateTime` struct, `from_timestamp`, `to_timestamp`, `format`, auto `to_string` | 0.6.0+ |
-| `std/os`         | `cwd()`, file I/O, environment info             | 0.6.0+           |
-| `std/strings`    | `lowercase`, `trim`, `split`, `replace`         | 0.6.0+           |
-
----
-
-### Implementation Strategy
-
-- Standard library modules are written in pure Orus and organized in `std/`  
-- Only minimal system functions are exposed from the VM runtime (e.g., `_timestamp`)  
-- Higher-order functions like `map(fn)` or `filter(fn)` will depend on function-as-value support planned for 0.6.x
-
----
-
-## Path to Version 1.0
-
-| Milestone | Focus |
-|-----------|-------|
-| **0.6.0** | Generic forward declarations, stdlib base modules, more built-ins |
-| **0.7.0** | Full generics implementation |
-| **0.8.0** | Expand standard library and core collections |
-| **0.9.0** | Concurrency and error handling improvements |
-| **1.0.0** | Finalized language stability, documentation, performance |
+### **Developer Experience Metrics**
+- **Setup Time**: <5 minutes from install to first program
+- **Error Quality**: 90% of errors provide actionable suggestions
+- **IDE Support**: Full feature parity with mainstream languages
+- **Learning Curve**: Junior developers productive within 1 week
 
 ---
 
 ## Development Priorities
 
--### Short-Term
-- ✅ Finalize improved type inference
-- Add remaining built-ins: `any`, `all`
-- Expand standard library with modules like `functional` and `random`.
+### **Short-Term (0.3.0 Focus)**
+- Essential I/O operations (file, environment, process)
+- Interactive debugger with breakpoints
+- Code formatter for consistent style
+- Expanded standard library (`std/io`, `std/strings`, `std/json`)
 
-### Medium-Term
-- Generic constraints and arithmetic  
-- Build out I/O, date/time, strings, and collections  
-- Improve diagnostics and error reporting
+### **Medium-Term (0.4.0 - 0.6.0 Focus)**
+- Package management system with registry
+- Language server for IDE integration
+- Network programming capabilities
+- Advanced tooling (profiler, documentation generator)
 
-### Long-Term
-- Full concurrency model with async/thread support  
-- Language optimizations and bytecode performance  
-- Prepare stable 1.0 release
+### **Long-Term (0.7.0 - 1.0.0 Focus)**
+- Async/await and threading support
+- JIT compilation for performance
+- Production operations and monitoring
+- Complete ecosystem maturity
+
+---
+
+## Timeline Overview
+
+```
+Year 1: Foundation Infrastructure (0.3.0 - 0.4.0)
+├── Q1: File I/O, System Integration, Basic Tooling
+├── Q2: Debugger, Formatter, Extended Standard Library  
+├── Q3: Package Manager Design, Network Libraries
+└── Q4: Package Registry, Language Server
+
+Year 2: Developer Experience (0.5.0 - 0.7.0)
+├── Q1: Package Management, HTTP Support
+├── Q2: Advanced Tooling, IDE Integration
+├── Q3: Performance Profiling, Documentation Tools
+└── Q4: Network Programming, Crypto Support
+
+Year 3: Production Ready (0.8.0 - 1.0.0)
+├── Q1: Async/Await, Threading, Database Support
+├── Q2: JIT Implementation, Memory Optimization
+├── Q3: Production Operations, Monitoring
+└── Q4: Final Polish, Community Growth, 1.0.0 Release
+```
+
+---
+
+## Risk Assessment and Mitigation
+
+### **High Risk Items**
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| **Limited Developer Resources** | High | Medium | Prioritize ruthlessly, build community contributors |
+| **Performance Expectations** | High | Medium | Early benchmarking, JIT compilation investment |
+| **Ecosystem Adoption** | High | Medium | Focus on developer experience, showcase projects |
+
+### **Medium Risk Items**
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| **Breaking Changes** | Medium | High | Careful API design, migration tools |
+| **Competition** | Medium | Medium | Focus on unique value propositions |
+| **Technical Debt** | Medium | Medium | Regular refactoring, code quality gates |
+
+---
+
+## Resource Requirements
+
+### **Development Team**
+- **Core Language**: 2-3 full-time developers
+- **Standard Library**: 2-3 full-time developers  
+- **Tooling**: 2-3 full-time developers
+- **Documentation/Community**: 1-2 full-time developers
+
+### **Infrastructure**
+- **Package Registry**: Cloud hosting, CDN
+- **CI/CD**: Automated testing across platforms
+- **Documentation**: Static site hosting, search
+- **Community**: Forums, chat, issue tracking
 
 ---
 
 ## Versioning Strategy
 
-### Semantic Versioning
-- **Major** (1.0.0): Stability milestone  
-- **Minor** (0.x.0): Features like generics, collections  
-- **Patch** (0.0.x): Fixes, minor additions
+### **Semantic Versioning**
+- **Major (1.0.0)**: Production stability milestone  
+- **Minor (0.x.0)**: Significant features (I/O, package management, async)  
+- **Patch (0.x.y)**: Bug fixes, minor additions
 
-### Compatibility
+### **Compatibility**
 - Backward compatibility maintained during 0.x phase  
-- Breaking changes clearly documented  
-- Migration tools/guides for major version jumps  
+- Breaking changes clearly documented with migration guides
+- Conservative approach to API stability approaching 1.0
+
+---
+
+## Next Steps
+
+### **Immediate Actions (Next 30 days)**
+1. **Prioritize Phase 1 features** based on community feedback
+2. **Set up development infrastructure** (CI/CD, testing, benchmarks)
+3. **Design file I/O system** architecture and API
+4. **Create contribution guidelines** for community developers
+
+### **Community Engagement**
+1. **Public roadmap discussion** - Gather feedback on priorities
+2. **Contributor onboarding** - Documentation and mentoring
+3. **Regular progress updates** - Monthly development blogs
+4. **Early adopter program** - Partner with interested developers
+
+---
+
+*This roadmap is a living document that will be updated based on community feedback, technical discoveries, and changing priorities. Last updated: June 2025*

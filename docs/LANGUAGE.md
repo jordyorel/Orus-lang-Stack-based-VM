@@ -1,6 +1,6 @@
 # Orus Language Guide
 
-Orus is an experimental interpreted language influenced by modern scripting languages and Rust-like syntax. This guide covers the features available in version 0.7.0 and serves both as a tutorial and reference. All examples come from the `tests/` directory.
+Orus is an experimental interpreted language influenced by modern scripting languages and Rust-like syntax. This guide covers the features available in version 0.2.0 and serves both as a tutorial and reference. All examples come from the `tests/` directory.
 
 For a step-by-step walkthrough from beginner to advanced topics see
 `docs/TUTORIAL.md`. Additional snippets are collected in

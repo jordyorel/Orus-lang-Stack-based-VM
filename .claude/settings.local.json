@@ -3,7 +3,9 @@
     "allow": [
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(cloc:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

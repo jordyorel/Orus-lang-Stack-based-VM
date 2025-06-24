@@ -3,6 +3,8 @@ build/
 # macOS metadata
 .DS_Store
 
+*.claude/
+
 # build artifacts
 orusc
 
