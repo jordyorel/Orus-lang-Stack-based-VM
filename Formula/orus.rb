@@ -1,9 +1,9 @@
 class Orus < Formula
   desc "Experimental stack-based virtual machine and language"
   homepage "https://github.com/jordyorel/Orus-lang-Stack-based-VM"
-  url "https://github.com/jordyorel/Orus-lang-Stack-based-VM/archive/2a3f12ab16607078bcf5652d20c5d26c471872c5.tar.gz"
-  sha256 "341c18cb0202fa33b0bd3c690fdb92c2587d671ca121b019c3ec5f92c9060818"
+  url "https://github.com/jordyorel/Orus-lang-Stack-based-VM/archive/refs/tags/v0.3.0.tar.gz"
   version "0.3.0"
+  sha256 "c31b6ce25ebc4cf8ffdce203cdacd8634289749b336d38d95d0b39f4484b4f81"
   license "MIT"
   head "https://github.com/jordyorel/Orus-lang-Stack-based-VM.git", branch: "main"
 
@@ -13,7 +13,9 @@ class Orus < Formula
   end
 
   test do
-    (testpath/"hello.orus").write('print("hello brew")')
+    (testpath/"hello.orus").write('fn main() {
+    print("hello brew")
+}')
     assert_equal "hello brew\n", shell_output("#{bin}/orusc #{testpath}/hello.orus")
   end
 end
