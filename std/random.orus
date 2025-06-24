@@ -1,34 +1,63 @@
+// Xoshiro128++ state - 4 x 32-bit words
+static mut STATE: [u32; 4] = [123456789u, 362436069u, 521288629u, 88675123u]
 
-// Linear Congruential Generator state
-static mut SEED: u64 = 123456789u
+// Rotate left helper function
+fn rotl(x: u32, k: i32) -> u32 {
+    let left = x << (k as u32)
+    let right = x >> (32u - (k as u32))
+    return left | right
+}
 
-fn rand_u64() -> u64 {
-    // Update the global seed using LCG parameters
-    let temp: f64 = (SEED as f64) * 6364136223846793005.0 + 1.0
-    SEED = temp as u64
-    return SEED
+// Xoshiro128++ algorithm - fast non-cryptographic RNG
+fn rand_u32() -> u32 {
+    let result = rotl(STATE[0] + STATE[3], 7) + STATE[0]
+
+    let t = STATE[1] << 9u
+
+    STATE[2] = STATE[2] ^ STATE[0]
+    STATE[3] = STATE[3] ^ STATE[1]
+    STATE[1] = STATE[1] ^ STATE[2]
+    STATE[0] = STATE[0] ^ STATE[3]
+
+    STATE[2] = STATE[2] ^ t
+    STATE[3] = rotl(STATE[3], 11)
+
+    return result
+}
+
+// SplitMix32 for seeding
+fn splitmix32(seed: u32) -> u32 {
+    let mut z = seed + (0x9e3779b9u as u32)
+    z = (z ^ (z >> 16u)) * (0x85ebca6bu as u32)
+    z = (z ^ (z >> 13u)) * (0xc2b2ae35u as u32)
+    return z ^ (z >> 16u)
 }
 
 // Set the seed for reproducible sequences
-pub fn set_seed(seed: u64) {
-    SEED = seed
+pub fn set_seed(seed: u32) {
+    let mut s = seed
+    STATE[0] = splitmix32(s)
+    s = s + 1u
+    STATE[1] = splitmix32(s)
+    s = s + 1u
+    STATE[2] = splitmix32(s)
+    s = s + 1u
+    STATE[3] = splitmix32(s)
 }
 
 // Automatically seed the generator when the module is loaded
-set_seed(timestamp() as u64)
+set_seed(timestamp() as u32)
 
 // Return a float in the range [0.0, 1.0)
 pub fn random() -> f64 {
-    // Divide by 2^64-1 to map to [0,1)
-    return (rand_u64() as f64) / 18446744073709551615.0
+    return (rand_u32() as f64) / 4294967295.0
 }
 
 // Return an integer in [min, max]
 pub fn randint(min: i32, max: i32) -> i32 {
-    let r: f64 = random()
-    let range: f64 = (max - min + 1) as f64
-    let offset: i32 = (r * range) as i32
-    return min + offset
+    let r = random()
+    let range = (max - min + 1) as f64
+    return min + ((r * range) as i32)
 }
 
 // Return a float in [a, b]
@@ -38,15 +67,15 @@ pub fn uniform(a: f64, b: f64) -> f64 {
 
 // Choose a random element from the array
 pub fn choice<T>(arr: [T]) -> T {
-    let i = randint(0 as i32, len(arr) - 1 as i32)
+    let i = randint(0, len(arr) - 1)
     return arr[i]
 }
 
 // Shuffle the array in-place using Fisher-Yates
 pub fn shuffle<T>(arr: [T]) {
     let n = len(arr)
-    for i in 0 as i32..n {
-        let j = randint(i, n - 1 as i32)
+    for i in 0..n {
+        let j = randint(i, n - 1)
         let temp = arr[i]
         arr[i] = arr[j]
         arr[j] = temp
@@ -57,7 +86,7 @@ pub fn shuffle<T>(arr: [T]) {
 pub fn sample<T>(arr: [T], k: i32) -> [T] {
     let copy: [T; 0] = arr[..]
     shuffle(copy)
-    return copy[0 as i32..k]
+    return copy[0..k]
 }
 
 // TODO: additional distributions like gauss require math.log/cos/sin
