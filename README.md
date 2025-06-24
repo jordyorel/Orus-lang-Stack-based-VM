@@ -68,6 +68,25 @@ make clean
 
 The build process places the final executable in `./orusc` and also keeps a copy in `build/release/clox`.
 
+## Homebrew Installation
+
+If you use [Homebrew](https://brew.sh) on macOS or Linux, a tap is provided so that
+the interpreter can be installed with a simple `brew install orus`:
+
+```sh
+brew tap jordyorel/orus
+brew install orus
+```
+
+The tap builds the latest release of the project. If you prefer to build from the
+checked‑out repository instead, run:
+
+```sh
+brew install --build-from-source ./Formula/orus.rb
+```
+
+Both methods install the `orusc` executable into Homebrew's `bin` directory.
+
 ## Running
 
 After building, run the interpreter in two ways:
