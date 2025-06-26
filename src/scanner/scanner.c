@@ -88,6 +88,7 @@ void init_scanner(const char* source) {
     scanner.line = 1;
     scanner.column = 1;
     scanner.lineStart = source;
+    scanner.inBlockComment = false;
     init_keyword_table();
 }
 
@@ -277,6 +278,23 @@ static Token error_token(const char* message) {
 static void skip_whitespace() {
     for (;;) {
         char c = peek();
+
+        if (scanner.inBlockComment) {
+            if (c == '\n') {
+                return;
+            } else if (c == '\0') {
+                error_token("Unterminated block comment.");
+                return;
+            } else if (c == '*' && peek_next() == '/') {
+                advance();
+                advance();
+                scanner.inBlockComment = false;
+            } else {
+                advance();
+            }
+            continue;
+        }
+
         switch (c) {
             case ' ':
             case '\r':
@@ -293,24 +311,11 @@ static void skip_whitespace() {
                         advance();
                     }
                 } else if (peek_next() == '*') {
-                    // Block comment
+                    // Enter block comment mode
                     advance();
                     advance();
-                    while (!is_at_end()) {
-                        if (peek() == '*' && peek_next() == '/') {
-                            advance();
-                            advance();
-                            break;
-                        }
-                        if (peek() == '\n') {
-                            // Return newline token even in comments
-                            return;
-                        }
-                        advance();
-                    }
-                    if (is_at_end()) {
-                        error_token("Unterminated block comment.");
-                    }
+                    scanner.inBlockComment = true;
+                    continue;
                 } else {
                     return;
                 }
