@@ -1455,10 +1455,18 @@ static InterpretResult run() {
                     }
                 }
 
-                // Runtime type enforcement
+                // Runtime type enforcement with automatic promotion from i32 to i64
                 if (!checkValueAgainstType(value, vm.globalTypes[index])) {
-                    RUNTIME_ERROR("Type mismatch for variable assignment.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    if (vm.globalTypes[index] &&
+                        vm.globalTypes[index]->kind == TYPE_I32 && IS_I64(value)) {
+                        // Promote the variable to i64 to hold the larger value
+                        Type* i64Type = getPrimitiveType(TYPE_I64);
+                        vm.globalTypes[index] = i64Type;
+                        variableTypes[index] = i64Type;
+                    } else {
+                        RUNTIME_ERROR("Type mismatch for variable assignment.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                 }
 
                 // Store the value in the global variable
