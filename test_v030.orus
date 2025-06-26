@@ -1,3 +1,0 @@
-fn main() {
-    println("Testing Orus 0.3.0 enhanced errors!")
-}
