@@ -1,6 +1,8 @@
 #ifndef clox_scanner_h
 #define clox_scanner_h
 
+#include <stdbool.h>
+
 typedef enum {
   // Single-character tokens.
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
@@ -69,6 +71,7 @@ typedef struct {
     int line;
     int column;          // Add column tracking
     const char* lineStart;  // Track start of current line for precise column calculation
+    bool inBlockComment;    // Track whether we are inside a block comment
 } Scanner;
 
 typedef struct {

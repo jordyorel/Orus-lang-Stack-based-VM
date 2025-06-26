@@ -1,0 +1,10 @@
+fn main() {
+    // single line
+    let x = 1 /* inline */ + 2
+
+    /*
+    This is a block comment.
+    Another line.
+    */
+    print(x)
+}
