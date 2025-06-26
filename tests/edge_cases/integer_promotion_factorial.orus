@@ -1,0 +1,8 @@
+// Factorial loop triggers promotion from i32 to i64
+fn main() {
+    let mut prod: i64 = 1
+    for i in 1..20 {
+        prod *= i
+    }
+    print(prod)
+}

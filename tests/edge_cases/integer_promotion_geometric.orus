@@ -1,0 +1,8 @@
+// Doubling a value 32 times should result in i64 value
+fn main() {
+    let mut v: i64 = 1
+    for _ in 0..32 {
+        v *= 2
+    }
+    print(v)
+}

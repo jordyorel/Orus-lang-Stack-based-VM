@@ -74,30 +74,15 @@ static inline void binaryOpI32(VM* vm, char op, InterpretResult* result) {
     int32_t res = 0;
     bool overflow = false;
     switch (op) {
-        case '+': {
-            unsigned long long ua = (unsigned long long)a;
-            unsigned long long ub = (unsigned long long)b;
-            unsigned long long ur;
-            overflow = __builtin_add_overflow(ua, ub, &ur);
-            res = (int64_t)ur;
+        case '+':
+            overflow = __builtin_add_overflow(a, b, &res);
             break;
-        }
-        case '-': {
-            unsigned long long ua = (unsigned long long)a;
-            unsigned long long ub = (unsigned long long)b;
-            unsigned long long ur;
-            overflow = __builtin_sub_overflow(ua, ub, &ur);
-            res = (int64_t)ur;
+        case '-':
+            overflow = __builtin_sub_overflow(a, b, &res);
             break;
-        }
-        case '*': {
-            unsigned long long ua = (unsigned long long)a;
-            unsigned long long ub = (unsigned long long)b;
-            unsigned long long ur;
-            overflow = __builtin_mul_overflow(ua, ub, &ur);
-            res = (int64_t)ur;
+        case '*':
+            overflow = __builtin_mul_overflow(a, b, &res);
             break;
-        }
         case '/':
             if (b == 0) {
                 vmRuntimeError("Division by zero.");
