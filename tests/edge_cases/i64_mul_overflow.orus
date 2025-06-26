@@ -1,0 +1,6 @@
+fn main() {
+    let a: i64 = 3_037_000_500
+    let b: i64 = 3_037_000_500
+    let res = a * b
+    print(res)
+}

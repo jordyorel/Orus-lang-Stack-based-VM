@@ -1,0 +1,7 @@
+// Shift operations crossing 32-bit boundary
+fn main() {
+    let a = 1 << 31
+    print(a)
+    let b = 1i64 << 32
+    print(b)
+}

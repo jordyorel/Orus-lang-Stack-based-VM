@@ -1,0 +1,10 @@
+fn main() {
+    let start = timestamp()
+    let mut sum: i64 = 0
+    for i in 0..1_000_000 {
+        sum += i
+    }
+    print("Sum: {}", sum)
+    let elapsed = timestamp() - start
+    print("Time elapsed: {}", elapsed)
+}

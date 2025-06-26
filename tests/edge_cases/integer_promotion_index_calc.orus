@@ -1,0 +1,8 @@
+// Index calculation promoting to i64
+fn main() {
+    let length: i32 = 50000
+    let page: i32 = 100000
+    let offset: i32 = 15
+    let idx = length * page + offset
+    print(idx)
+}

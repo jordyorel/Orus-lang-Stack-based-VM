@@ -1,0 +1,10 @@
+// Exponentiation by repeated multiplication to test promotion
+fn main() {
+    let mut x: i64 = 1
+    for _ in 0..9 {
+        x *= 10
+    }
+    print(x)
+    x *= 10
+    print(x)
+}
