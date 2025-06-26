@@ -1,0 +1,5 @@
+fn main() {
+    let max: i64 = 9_223_372_036_854_775_807
+    let res = max + 1
+    print(res)
+}
