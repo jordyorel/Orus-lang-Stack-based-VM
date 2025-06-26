@@ -111,8 +111,33 @@ static inline void binaryOpI32(VM* vm, char op, InterpretResult* result) {
             *result = INTERPRET_RUNTIME_ERROR;
             return;
     }
-    if (overflow) handleOverflow("i32 overflow");
-    vmPush(vm, I32_VAL(res));
+    if (overflow) {
+        int64_t la = (int64_t)a;
+        int64_t lb = (int64_t)b;
+        int64_t lres = 0;
+        bool of64 = false;
+        switch (op) {
+            case '+': of64 = __builtin_add_overflow(la, lb, &lres); break;
+            case '-': of64 = __builtin_sub_overflow(la, lb, &lres); break;
+            case '*': of64 = __builtin_mul_overflow(la, lb, &lres); break;
+            case '/':
+                if (b == 0) {
+                    vmRuntimeError("Division by zero.");
+                    *result = INTERPRET_RUNTIME_ERROR;
+                    return;
+                }
+                lres = la / lb;
+                break;
+            default:
+                fprintf(stderr, "Unknown operator: %c\n", op);
+                *result = INTERPRET_RUNTIME_ERROR;
+                return;
+        }
+        if (of64) handleOverflow("i64 overflow");
+        vmPushI64(vm, lres);
+    } else {
+        vmPush(vm, I32_VAL(res));
+    }
 }
 
 // Binary operations for i64
