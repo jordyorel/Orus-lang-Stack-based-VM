@@ -8,6 +8,9 @@ build/
 # build artifacts
 orusc
 
+# binary
+.wasm
+
 # WebAssembly build artifacts
 web/*.js
 web/*.wasm
