@@ -62,8 +62,12 @@ static uint8_t runtimeStackCount = 0;
 static bool checkValueAgainstType(Value value, Type* type) {
     if (!type) return true;
     switch (type->kind) {
-        case TYPE_I32: return IS_I32(value);
-        case TYPE_I64: return IS_I64(value);
+        case TYPE_I32:
+            if (IS_I32(value)) return true;
+            if (IS_I64(value)) return AS_I64(value) >= INT32_MIN && AS_I64(value) <= INT32_MAX;
+            return false;
+        case TYPE_I64:
+            return IS_I64(value) || IS_I32(value);
         case TYPE_U32: return IS_U32(value);
         case TYPE_U64: return IS_U64(value);
         case TYPE_F64: return IS_F64(value);
