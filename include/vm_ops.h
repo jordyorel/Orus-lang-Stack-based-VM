@@ -69,20 +69,44 @@ static inline void handleOverflow(const char* message) {
 
 // Binary operations for i32
 static inline void binaryOpI32(VM* vm, char op, InterpretResult* result) {
-    int32_t b = AS_I32(vmPop(vm));
-    int32_t a = AS_I32(vmPop(vm));
+    Value bVal = vmPop(vm);
+    Value aVal = vmPop(vm);
+
+    if (IS_I64(aVal) || IS_I64(bVal)) {
+        int64_t a = IS_I64(aVal) ? AS_I64(aVal) : AS_I32(aVal);
+        int64_t b = IS_I64(bVal) ? AS_I64(bVal) : AS_I32(bVal);
+        int64_t r = 0;
+        bool of64 = false;
+        switch (op) {
+            case '+': of64 = __builtin_add_overflow(a, b, &r); break;
+            case '-': of64 = __builtin_sub_overflow(a, b, &r); break;
+            case '*': of64 = __builtin_mul_overflow(a, b, &r); break;
+            case '/':
+                if (b == 0) {
+                    vmRuntimeError("Division by zero.");
+                    *result = INTERPRET_RUNTIME_ERROR;
+                    return;
+                }
+                r = a / b;
+                break;
+            default:
+                fprintf(stderr, "Unknown operator: %c\n", op);
+                *result = INTERPRET_RUNTIME_ERROR;
+                return;
+        }
+        if (of64) handleOverflow("i64 overflow");
+        vmPushI64(vm, r);
+        return;
+    }
+
+    int32_t b = AS_I32(bVal);
+    int32_t a = AS_I32(aVal);
     int32_t res = 0;
     bool overflow = false;
     switch (op) {
-        case '+':
-            overflow = __builtin_add_overflow(a, b, &res);
-            break;
-        case '-':
-            overflow = __builtin_sub_overflow(a, b, &res);
-            break;
-        case '*':
-            overflow = __builtin_mul_overflow(a, b, &res);
-            break;
+        case '+': overflow = __builtin_add_overflow(a, b, &res); break;
+        case '-': overflow = __builtin_sub_overflow(a, b, &res); break;
+        case '*': overflow = __builtin_mul_overflow(a, b, &res); break;
         case '/':
             if (b == 0) {
                 vmRuntimeError("Division by zero.");
