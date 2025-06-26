@@ -1,6 +1,6 @@
 fn main() {
     let start = timestamp()
-    let mut sum: i64 = 0
+    let mut sum = 0
     for i in 0..1_000_000 {
         sum += i
     }
