@@ -90,8 +90,6 @@ ObjArray* allocateArray(int length);
 ObjIntArray* allocateIntArray(int length);
 ObjRangeIterator* allocateRangeIterator(int64_t start, int64_t end);
 struct ObjError* allocateError(ErrorType type, const char* message, SrcLocation location);
-struct ObjBigInt* allocateBigIntFromI64(int64_t value);
-struct ObjBigInt* allocateBigIntFromMPZ(const mpz_t src);
 
 // Allocate AST and Type objects
 struct ASTNode* allocateASTNode();

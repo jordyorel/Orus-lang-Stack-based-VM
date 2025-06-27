@@ -21,10 +21,6 @@ It complements the design in `auto_integer_promotion.md` and breaks down the wor
 - [x] Automatically generate `i64` bytecode in cases where overflow is provably possible.
 - [x] Emit promotion hints in debug builds to validate the inference behaviour.
 
-## Phase 4 – BigInt Foundations (optional)
-- Introduce a `VAL_BIGINT` type using an external big‑integer library.
-- Generalise the promotion mechanism so `i64` overflow can widen to `BigInt`.
-- Provide basic arithmetic and printing support for big integers.
 
 ## Testing and Validation
 - Extend the unit test suite with the scenarios listed in `auto_integer_promotion.md`.

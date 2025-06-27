@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include <string.h>
-#include <gmp.h>
 
 // Forward declarations used for object references
 typedef struct Obj Obj;
@@ -23,7 +22,6 @@ typedef enum {
     OBJ_TYPE,
     OBJ_ERROR,
     OBJ_RANGE_ITERATOR,
-    OBJ_BIGINT,
 } ObjType;
 
 struct Obj {
@@ -44,7 +42,6 @@ typedef enum {
     VAL_ARRAY,
     VAL_ERROR,
     VAL_RANGE_ITERATOR,
-    VAL_BIGINT,
 } ValueType;
 
 typedef struct ObjString {
@@ -72,11 +69,6 @@ typedef struct ObjRangeIterator {
     int64_t end;
 } ObjRangeIterator;
 
-typedef struct ObjBigInt {
-    Obj obj;
-    mpz_t value;
-} ObjBigInt;
-
 typedef ObjString String;
 typedef ObjArray Array;
 
@@ -93,7 +85,6 @@ typedef struct Value {
         ObjArray* array;
         ObjError* error;
         ObjRangeIterator* rangeIter;
-        struct ObjBigInt* bigint;
     } as;
 } Value;
 
@@ -109,7 +100,6 @@ typedef struct Value {
 #define ARRAY_VAL(obj)   ((Value){VAL_ARRAY, {.array = obj}})
 #define ERROR_VAL(obj)   ((Value){VAL_ERROR, {.error = obj}})
 #define RANGE_ITERATOR_VAL(obj) ((Value){VAL_RANGE_ITERATOR, {.rangeIter = obj}})
-#define BIGINT_VAL(obj) ((Value){VAL_BIGINT, {.bigint = obj}})
 
 // Value checking macros
 #define IS_I32(value)    ((value).type == VAL_I32)
@@ -123,7 +113,6 @@ typedef struct Value {
 #define IS_ARRAY(value)  ((value).type == VAL_ARRAY)
 #define IS_ERROR(value)  ((value).type == VAL_ERROR)
 #define IS_RANGE_ITERATOR(value) ((value).type == VAL_RANGE_ITERATOR)
-#define IS_BIGINT(value) ((value).type == VAL_BIGINT)
 
 // Value extraction macros
 #define AS_I32(value)    ((value).as.i32)
@@ -136,7 +125,6 @@ typedef struct Value {
 #define AS_ARRAY(value)  ((value).as.array)
 #define AS_ERROR(value)  ((value).as.error)
 #define AS_RANGE_ITERATOR(value) ((value).as.rangeIter)
-#define AS_BIGINT(value) ((value).as.bigint)
 
 // Generic dynamic array implementation used for storing Values.
 #include "generic_array.h"

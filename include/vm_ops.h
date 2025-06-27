@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
-#include <gmp.h>
 #include "value.h"
 #include "vm.h"
 #include "memory.h"
@@ -157,36 +156,6 @@ static inline void binaryOpI64(VM* vm, char op, InterpretResult* result) {
     Value bVal = vmPop(vm);
     Value aVal = vmPop(vm);
 
-    if (IS_BIGINT(aVal) || IS_BIGINT(bVal)) {
-        mpz_t a; mpz_t b; mpz_t r;
-        mpz_init(r);
-        if (IS_BIGINT(aVal)) { mpz_init_set(a, AS_BIGINT(aVal)->value); } else { mpz_init_set_si(a, AS_I64(aVal)); }
-        if (IS_BIGINT(bVal)) { mpz_init_set(b, AS_BIGINT(bVal)->value); } else { mpz_init_set_si(b, AS_I64(bVal)); }
-        switch (op) {
-            case '+': mpz_add(r, a, b); break;
-            case '-': mpz_sub(r, a, b); break;
-            case '*': mpz_mul(r, a, b); break;
-            case '/':
-                if (mpz_sgn(b) == 0) {
-                    vmRuntimeError("Division by zero.");
-                    *result = INTERPRET_RUNTIME_ERROR;
-                    mpz_clear(a); mpz_clear(b); mpz_clear(r);
-                    return;
-                }
-                mpz_fdiv_q(r, a, b);
-                break;
-            default:
-                fprintf(stderr, "Unknown operator: %c\n", op);
-                *result = INTERPRET_RUNTIME_ERROR;
-                mpz_clear(a); mpz_clear(b); mpz_clear(r);
-                return;
-        }
-        ObjBigInt* obj = allocateBigIntFromMPZ(r);
-        mpz_clear(a); mpz_clear(b); mpz_clear(r);
-        vmPush(vm, BIGINT_VAL(obj));
-        return;
-    }
-
     int64_t b = AS_I64(bVal);
     int64_t a = AS_I64(aVal);
     int64_t res = 0;
@@ -209,20 +178,9 @@ static inline void binaryOpI64(VM* vm, char op, InterpretResult* result) {
             return;
     }
     if (overflow) {
-        mpz_t aa, bb, rr; mpz_init_set_si(aa, a); mpz_init_set_si(bb, b); mpz_init(rr);
-        switch(op){
-            case '+': mpz_add(rr, aa, bb); break;
-            case '-': mpz_sub(rr, aa, bb); break;
-            case '*': mpz_mul(rr, aa, bb); break;
-            case '/': mpz_fdiv_q(rr, aa, bb); break;
-        }
-        ObjBigInt* obj = allocateBigIntFromMPZ(rr);
-        mpz_clear(aa); mpz_clear(bb); mpz_clear(rr);
         handleOverflow("i64 overflow");
-        vmPush(vm, BIGINT_VAL(obj));
-    } else {
-        vmPushI64(vm, res);
     }
+    vmPushI64(vm, res);
 }
 
 // Binary operations for u32
@@ -304,12 +262,6 @@ static inline Value convertToString(Value value) {
         case VAL_U64:
             length = snprintf(buffer, sizeof(buffer), "%llu", (unsigned long long)AS_U64(value));
             break;
-        case VAL_BIGINT: {
-            char* str = mpz_get_str(NULL, 10, AS_BIGINT(value)->value);
-            length = snprintf(buffer, sizeof(buffer), "%s", str);
-            free(str);
-            break;
-        }
         case VAL_F64:
             length = snprintf(buffer, sizeof(buffer), "%g", AS_F64(value));
             break;
