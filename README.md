@@ -43,49 +43,38 @@ include:
 
 The repository contains the interpreter sources and a large suite of example programs. A quick tour of the syntax lives in [`docs/LANGUAGE.md`](docs/LANGUAGE.md) and a step-by-step introduction is provided in [`docs/TUTORIAL.md`](docs/TUTORIAL.md). Notes on generics appear in [`docs/GENERICS.md`](docs/GENERICS.md) and more examples are spread throughout the test suite. See [`docs/TESTS_OVERVIEW.md`](docs/TESTS_OVERVIEW.md) for a list of categories. A potential compilation roadmap is outlined in [`docs/COMPILATION_ROADMAP.md`](docs/COMPILATION_ROADMAP.md). For a summary of built-in functions consult [`docs/BUILTINS.md`](docs/BUILTINS.md).
 
-## Building
+## Installation
 
-A `Makefile` is provided. Building requires `gcc` and `make`.
+### Download Binary
 
-```sh
-# Build the interpreter
+Download the pre-built binary directly:
+
+```bash
+# Download and install (macOS/Linux)
+curl -L -o orusc https://github.com/jordyorel/Orus-lang/releases/download/v0.3.1-alpha/orusc
+chmod +x orusc
+sudo mv orusc /usr/local/bin/
+
+# Verify installation
+orusc --version
+```
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/jordyorel/Orus-lang.git
+cd Orus-lang
+
+# Build the compiler
 make
 
-# Remove generated files
-make clean
+# Install globally (optional)
+sudo cp orusc /usr/local/bin/
+
+# Test the installation
+orusc --version
 ```
-
-### Platform notes
-
-* **Linux** and **macOS** – Install `gcc` and `make` with your
-  package manager (for macOS you may first need the Xcode command line tools).
-  Then run the commands above from a terminal.
-
-* **Windows** – Use [WSL](https://learn.microsoft.com/windows/wsl/) or an MSYS2
-  environment so that `make` and `gcc` are available. After installing the
-  tools, build from the provided shell just like on Linux.
-
-
-The build process places the final executable in `./orusc` and also keeps a copy in `build/release/clox`.
-
-## Homebrew Installation
-
-If you use [Homebrew](https://brew.sh) on macOS or Linux, a tap is provided so that
-the interpreter can be installed with a simple `brew install orus`:
-
-```sh
-brew tap jordyorel/orus
-brew install orus
-```
-
-The tap builds the latest release of the project. If you prefer to build from the
-checked‑out repository instead, run:
-
-```sh
-brew install --build-from-source ./Formula/orus.rb
-```
-
-Both methods install the `orusc` executable into Homebrew's `bin` directory.
 
 ## Running
 
