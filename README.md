@@ -51,7 +51,7 @@ Download the pre-built binary directly:
 
 ```bash
 # Download and install (macOS/Linux)
-curl -L -o orusc https://github.com/jordyorel/Orus-lang/releases/download/v0.2.1-alpha/orusc
+curl -L -o orusc "https://github.com/jordyorel/Orus-lang/releases/download/$(curl -s https://api.github.com/repos/jordyorel/Orus-lang/releases | jq -r '.[0].tag_name')/orusc"
 chmod +x orusc
 sudo mv orusc /usr/local/bin/
 
