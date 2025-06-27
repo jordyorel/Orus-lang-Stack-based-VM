@@ -10,7 +10,7 @@ web-if-available:
 	else \
 		echo "Emscripten not found, skipping WebAssembly build (use 'make web-simple' if you have emcc installed)"; \
 	fi
-CFLAGS=-I./include -Wall -g
+CFLAGS=-I./include -I/opt/homebrew/include -Wall -g
 SRC=$(shell find src -name '*.c' | grep -v 'src/web/')
 WEB_SRC=$(shell find src -name '*.c' | grep -v main.c | grep -v 'src/web/') src/web/web_main.c
 STDLIBC=src/vm/builtin_stdlib.c
@@ -25,7 +25,7 @@ WEB_TARGET=web/orus-web
 
 debug: $(OBJ)
 	@mkdir -p $(dir $(RELEASE_TARGET))
-	$(CC) -o $(RELEASE_TARGET) $^ -lm -lgmp
+	$(CC) -o $(RELEASE_TARGET) $^ -lm -L/opt/homebrew/lib -lgmp
 	cp $(RELEASE_TARGET) $(TARGET)
 
 orusc: debug
@@ -33,7 +33,7 @@ orusc: debug
 # Rule to build the final binary
 $(RELEASE_TARGET): $(OBJ)
 	@mkdir -p $(dir $@)
-	$(CC) -o $@ $^ -lm -lgmp
+	$(CC) -o $@ $^ -lm -L/opt/homebrew/lib -lgmp
 
 # Rule to compile .c files into .o files in debug directory
 build/debug/orus/%.o: src/%.c
@@ -52,7 +52,7 @@ WASM_FLAGS=-I./include -O1 -s WASM=1 \
            -s NO_EXIT_RUNTIME=1 \
            -s ENVIRONMENT='web' \
            --pre-js src/web/pre.js \
-           -lm -lgmp
+           -lm -L/opt/homebrew/lib -lgmp
 
 web: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
 	@mkdir -p web
@@ -81,7 +81,7 @@ check-emcc:
 # Rule to compile .c files for WebAssembly
 build/web/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(EMCC) -I./include -O2 -c $< -o $@
+	$(EMCC) -I./include -I/opt/homebrew/include -O2 -c $< -o $@
 
 # Non-modular build (easier to debug)
 web-simple: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
@@ -93,7 +93,7 @@ web-simple: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
 	-s INITIAL_MEMORY=64MB \
 	-s NO_EXIT_RUNTIME=1 \
 	-s ENVIRONMENT='web' \
-        -lm -lgmp \
+        -lm -L/opt/homebrew/lib -lgmp \
         -o web/orus-simple.js $(WEB_OBJ)
 
 # Clean rule to remove all generated files

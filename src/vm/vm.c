@@ -957,9 +957,6 @@ static InterpretResult run() {
             case OP_GREATER_F64:
                 compareOpF64(&vm, '>', &result);
                 break;
-            case OP_GREATER_GENERIC:
-                compareOpGeneric(&vm, '>', &result);
-                break;
             case OP_GREATER_EQUAL_I32:
                 compareOpI32(&vm, 'G', &result);
                 break;
@@ -2079,6 +2076,12 @@ static InterpretResult run() {
                                                     (long long)AS_RANGE_ITERATOR(arg)->current,
                                                     (long long)AS_RANGE_ITERATOR(arg)->end);
                                 break;
+                            case VAL_BIGINT: {
+                                char* str = mpz_get_str(NULL, 10, AS_BIGINT(arg)->value);
+                                valueLen = snprintf(valueStr, sizeof(valueStr), "%s", str);
+                                free(str);
+                                break;
+                            }
                         }
 
                         if (valueLen > 0) {
@@ -2087,8 +2090,7 @@ static InterpretResult run() {
                                 resultBuffer = (char*)realloc(resultBuffer,
                                                               resultCapacity);
                                 if (!resultBuffer) {
-                                    RUNTIME_ERROR("Memory reallocation failed for value "
-                                        "conversion.");
+                                    RUNTIME_ERROR("Memory reallocation failed for value conversion.");
                                     return INTERPRET_RUNTIME_ERROR;
                                 }
                             }
@@ -2256,6 +2258,12 @@ static InterpretResult run() {
                                                     (long long)AS_RANGE_ITERATOR(arg)->current,
                                                     (long long)AS_RANGE_ITERATOR(arg)->end);
                                 break;
+                            case VAL_BIGINT: {
+                                char* str = mpz_get_str(NULL, 10, AS_BIGINT(arg)->value);
+                                valueLen = snprintf(valueStr, sizeof(valueStr), "%s", str);
+                                free(str);
+                                break;
+                            }
                         }
 
                         if (valueLen > 0) {
