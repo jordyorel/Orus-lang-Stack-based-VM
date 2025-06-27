@@ -1,4 +1,4 @@
-# Orus Language
+# Orus Language Jordy
 
 Orus is an experimental interpreted programming language implemented in C. It
 features a syntax inspired by modern languages such as Python and Rust. Supported features
