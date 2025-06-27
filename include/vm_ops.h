@@ -60,6 +60,7 @@ static inline void vmPushI64(VM* vm, int64_t value) {
 }
 
 static inline void handleOverflow(const char* message) {
+    if (vm.suppressWarnings) return;
     if (vm.devMode) {
         vmRuntimeError(message);
     } else {
