@@ -25,5 +25,8 @@ arrays, strings and simple I/O without importing additional modules.
 | `native_pow(base, exp)` | Fast power using the host math library. |
 | `native_sqrt(x)` | Fast square root using the host math library. |
 
+The `int()` builtin returns an `i32` when the parsed value fits in 32 bits.
+If the number is larger, it yields an `i64` instead.
+
 Additional functionality is provided by the standard library modules in
 `std/`. See `docs/ORUS_ROADMAP.md` for planned future built-ins.
