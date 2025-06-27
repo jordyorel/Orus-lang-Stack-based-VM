@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
@@ -278,16 +279,16 @@ static Value native_int(int argCount, Value* args) {
         vmRuntimeError("int() argument must be a string.");
         return NIL_VAL;
     }
+    errno = 0;
     char* end;
     const char* text = AS_STRING(args[0])->chars;
-    long value = strtol(text, &end, 10);
-    if (*end != '\0') {
+    long long value = strtoll(text, &end, 10);
+    if (*end != '\0' || errno == ERANGE) {
         vmRuntimeError("invalid integer literal.");
         return NIL_VAL;
     }
     if (value < INT32_MIN || value > INT32_MAX) {
-        vmRuntimeError("integer value out of range.");
-        return NIL_VAL;
+        return I64_VAL((int64_t)value);
     }
     return I32_VAL((int32_t)value);
 }
@@ -759,7 +760,7 @@ static BuiltinEntry builtinTable[] = {
     {"type_of", native_type_of, 1, TYPE_STRING},
     {"is_type", native_is_type, 2, TYPE_BOOL},
     {"input", native_input, 1, TYPE_STRING},
-    {"int", native_int, 1, TYPE_I32},
+    {"int", native_int, 1, TYPE_COUNT},
     {"float", native_float, 1, TYPE_F64},
     {"timestamp", native_timestamp, 0, TYPE_F64},
     {"sorted", native_sorted, -1, TYPE_ARRAY},
