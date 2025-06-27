@@ -10,7 +10,7 @@ web-if-available:
 	else \
 		echo "Emscripten not found, skipping WebAssembly build (use 'make web-simple' if you have emcc installed)"; \
 	fi
-CFLAGS=-I./include -Wall -g
+CFLAGS=-I./include -I/opt/homebrew/include -Wall -g
 SRC=$(shell find src -name '*.c' | grep -v 'src/web/')
 WEB_SRC=$(shell find src -name '*.c' | grep -v main.c | grep -v 'src/web/') src/web/web_main.c
 STDLIBC=src/vm/builtin_stdlib.c
@@ -81,7 +81,7 @@ check-emcc:
 # Rule to compile .c files for WebAssembly
 build/web/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(EMCC) -I./include -O2 -c $< -o $@
+	$(EMCC) -I./include -I/opt/homebrew/include -O2 -c $< -o $@
 
 # Non-modular build (easier to debug)
 web-simple: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
