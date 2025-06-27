@@ -75,30 +75,46 @@ void printValue(Value value) {
  * @return  True if values are equal.
  */
 bool valuesEqual(Value a, Value b) {
-    if (a.type != b.type) return false;
-    
-    switch (a.type) {
-        case VAL_I32: return a.as.i32 == b.as.i32;
-        case VAL_I64: return a.as.i64 == b.as.i64;
-        case VAL_U32: return a.as.u32 == b.as.u32;
-        case VAL_U64: return a.as.u64 == b.as.u64;
-        case VAL_F64: return a.as.f64 == b.as.f64;
-        case VAL_BOOL: return a.as.boolean == b.as.boolean;
-        case VAL_NIL: return true;
-        case VAL_STRING:
-            return a.as.string->length == b.as.string->length &&
-                   memcmp(a.as.string->chars, b.as.string->chars, a.as.string->length) == 0;
-        case VAL_ARRAY: {
-            if (a.as.array->length != b.as.array->length) return false;
-            for (int i = 0; i < a.as.array->length; i++) {
-                if (!valuesEqual(a.as.array->elements[i], b.as.array->elements[i])) return false;
+    if (a.type == b.type) {
+        switch (a.type) {
+            case VAL_I32: return a.as.i32 == b.as.i32;
+            case VAL_I64: return a.as.i64 == b.as.i64;
+            case VAL_U32: return a.as.u32 == b.as.u32;
+            case VAL_U64: return a.as.u64 == b.as.u64;
+            case VAL_F64: return a.as.f64 == b.as.f64;
+            case VAL_BOOL: return a.as.boolean == b.as.boolean;
+            case VAL_NIL: return true;
+            case VAL_STRING:
+                return a.as.string->length == b.as.string->length &&
+                       memcmp(a.as.string->chars, b.as.string->chars, a.as.string->length) == 0;
+            case VAL_ARRAY: {
+                if (a.as.array->length != b.as.array->length) return false;
+                for (int i = 0; i < a.as.array->length; i++) {
+                    if (!valuesEqual(a.as.array->elements[i], b.as.array->elements[i])) return false;
+                }
+                return true;
             }
-            return true;
+            case VAL_ERROR:
+                return a.as.error == b.as.error;
+            case VAL_RANGE_ITERATOR:
+                return a.as.rangeIter == b.as.rangeIter;
+            default: return false;
         }
-        case VAL_ERROR:
-            return a.as.error == b.as.error;
-        case VAL_RANGE_ITERATOR:
-            return a.as.rangeIter == b.as.rangeIter;
-        default: return false;
     }
+
+    // Cross-width integer comparisons used after automatic promotion.
+    if (IS_I32(a) && IS_I64(b)) {
+        return (int64_t)AS_I32(a) == AS_I64(b);
+    }
+    if (IS_I64(a) && IS_I32(b)) {
+        return AS_I64(a) == (int64_t)AS_I32(b);
+    }
+    if (IS_U32(a) && IS_U64(b)) {
+        return (uint64_t)AS_U32(a) == AS_U64(b);
+    }
+    if (IS_U64(a) && IS_U32(b)) {
+        return AS_U64(a) == (uint64_t)AS_U32(b);
+    }
+
+    return false;
 }

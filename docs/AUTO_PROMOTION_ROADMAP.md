@@ -11,7 +11,7 @@ It complements the design in `auto_integer_promotion.md` and breaks down the wor
 - Provide an environment flag to disable overflow warnings during rollout.
 
 ## Phase 2 – IR and Type Adjustments (3-4 weeks)
-- Allow `Value` instances to upgrade from `VAL_I32` to `VAL_I64` without type errors.
+- ✅ Allow `Value` instances to upgrade from `VAL_I32` to `VAL_I64` without type errors.
 - Extend `checkValueAgainstType` so an `i64` value is acceptable for `i32` variables when it still fits.
 - Review built‑in functions and the standard library for assumptions about fixed widths.
 - Update serialization and bytecode formats if necessary to record promoted widths.
