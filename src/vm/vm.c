@@ -4,7 +4,6 @@
  */
 #include "../../include/vm.h"
 #include "../../include/builtins.h"
-#include <gmp.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -71,7 +70,6 @@ static bool checkValueAgainstType(Value value, Type* type) {
             return IS_I64(value) || IS_I32(value);
         case TYPE_U32: return IS_U32(value);
         case TYPE_U64: return IS_U64(value);
-        case TYPE_BIGINT: return IS_BIGINT(value) || IS_I64(value) || IS_I32(value);
         case TYPE_F64: return IS_F64(value);
         case TYPE_BOOL: return IS_BOOL(value);
         case TYPE_STRING: return IS_STRING(value);
@@ -261,12 +259,6 @@ static bool appendValueString(Value value, char** buffer, int* length,
         case VAL_U64:
             snprintf(tmp, sizeof(tmp), "%llu", (unsigned long long)AS_U64(value));
             return appendStringDynamic(tmp, buffer, length, capacity);
-        case VAL_BIGINT: {
-            char* str = mpz_get_str(NULL, 10, AS_BIGINT(value)->value);
-            bool ok = appendStringDynamic(str, buffer, length, capacity);
-            free(str);
-            return ok;
-        }
         case VAL_F64:
             snprintf(tmp, sizeof(tmp), "%g", AS_F64(value));
             return appendStringDynamic(tmp, buffer, length, capacity);

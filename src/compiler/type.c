@@ -34,7 +34,6 @@ void initTypeSystem(void) {
     primitiveTypes[TYPE_I64] = createPrimitiveType(TYPE_I64);
     primitiveTypes[TYPE_U32] = createPrimitiveType(TYPE_U32);
     primitiveTypes[TYPE_U64] = createPrimitiveType(TYPE_U64);
-    primitiveTypes[TYPE_BIGINT] = createPrimitiveType(TYPE_BIGINT);
     primitiveTypes[TYPE_F64] = createPrimitiveType(TYPE_F64);
     primitiveTypes[TYPE_BOOL] = createPrimitiveType(TYPE_BOOL);
     primitiveTypes[TYPE_STRING] = createPrimitiveType(TYPE_STRING);
@@ -194,7 +193,6 @@ const char* getTypeName(TypeKind kind) {
         case TYPE_I64: return "i64";
         case TYPE_U32: return "u32";
         case TYPE_U64: return "u64";
-        case TYPE_BIGINT: return "bigint";
         case TYPE_F64: return "f64";
         case TYPE_BOOL: return "bool";
         case TYPE_STRING: return "string";

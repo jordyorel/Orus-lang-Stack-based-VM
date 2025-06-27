@@ -25,7 +25,7 @@ WEB_TARGET=web/orus-web
 
 debug: $(OBJ)
 	@mkdir -p $(dir $(RELEASE_TARGET))
-	$(CC) -o $(RELEASE_TARGET) $^ -lm -L/opt/homebrew/lib -lgmp
+	$(CC) -o $(RELEASE_TARGET) $^ -lm
 	cp $(RELEASE_TARGET) $(TARGET)
 
 orusc: debug
@@ -33,7 +33,7 @@ orusc: debug
 # Rule to build the final binary
 $(RELEASE_TARGET): $(OBJ)
 	@mkdir -p $(dir $@)
-	$(CC) -o $@ $^ -lm -L/opt/homebrew/lib -lgmp
+	        $(CC) -o $@ $^ -lm
 
 # Rule to compile .c files into .o files in debug directory
 build/debug/orus/%.o: src/%.c
@@ -52,7 +52,7 @@ WASM_FLAGS=-I./include -O1 -s WASM=1 \
            -s NO_EXIT_RUNTIME=1 \
            -s ENVIRONMENT='web' \
            --pre-js src/web/pre.js \
-           -lm -L/opt/homebrew/lib -lgmp
+           -lm
 
 web: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
 	@mkdir -p web
@@ -92,8 +92,8 @@ web-simple: check-emcc $(STDLIBC) $(STDLIBH) $(WEB_OBJ)
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s INITIAL_MEMORY=64MB \
 	-s NO_EXIT_RUNTIME=1 \
-	-s ENVIRONMENT='web' \
-        -lm -L/opt/homebrew/lib -lgmp \
+        -s ENVIRONMENT='web' \
+        -lm \
         -o web/orus-simple.js $(WEB_OBJ)
 
 # Clean rule to remove all generated files

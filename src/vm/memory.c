@@ -4,7 +4,6 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include <gmp.h>
 
 #include "../../include/memory.h"
 #include "../../include/vm.h"
@@ -113,20 +112,6 @@ ObjRangeIterator* allocateRangeIterator(int64_t start, int64_t end) {
     return it;
 }
 
-ObjBigInt* allocateBigIntFromI64(int64_t value) {
-    ObjBigInt* obj =
-        (ObjBigInt*)allocateObject(sizeof(ObjBigInt), OBJ_BIGINT);
-    mpz_init_set_si(obj->value, value);
-    return obj;
-}
-
-ObjBigInt* allocateBigIntFromMPZ(const mpz_t src) {
-    ObjBigInt* obj =
-        (ObjBigInt*)allocateObject(sizeof(ObjBigInt), OBJ_BIGINT);
-    mpz_init(obj->value);
-    mpz_set(obj->value, src);
-    return obj;
-}
 
 /**
  * Allocate a runtime error object with message and location.
@@ -209,10 +194,6 @@ void markObject(Obj* object) {
         }
         case OBJ_RANGE_ITERATOR: {
             // Range iterators have no referenced objects
-            break;
-        }
-        case OBJ_BIGINT: {
-            // BigInts have no referenced objects
             break;
         }
         case OBJ_AST: {
@@ -408,13 +389,6 @@ static void freeObject(Obj* object) {
         case OBJ_RANGE_ITERATOR: {
             vm.bytesAllocated -= sizeof(ObjRangeIterator);
             free(object);
-            break;
-        }
-        case OBJ_BIGINT: {
-            ObjBigInt* bi = (ObjBigInt*)object;
-            mpz_clear(bi->value);
-            vm.bytesAllocated -= sizeof(ObjBigInt);
-            free(bi);
             break;
         }
         case OBJ_ERROR: {

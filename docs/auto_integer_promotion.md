@@ -9,8 +9,7 @@ operation so the program continues with the mathematically correct result.
 ## IR changes
 
 * **Value Types** – Keep existing `VAL_I32`/`VAL_I64` but allow a value to be
-  upgraded from `VAL_I32` to `VAL_I64` at runtime. A future `VAL_BIGINT` type can
-  represent arbitrarily large integers once needed.
+  upgraded from `VAL_I32` to `VAL_I64` at runtime.
 * **Opcodes** – `OP_ADD_I32`, `OP_SUBTRACT_I32`, etc. behave as before but when
   an overflow is detected they perform the operation again using the wider
   `i64` instruction and push an `i64` result.
@@ -25,9 +24,8 @@ operation so the program continues with the mathematically correct result.
    overflow. On overflow it converts both operands to `int64_t` and performs the
    calculation again using `binaryOpI64` semantics.
 2. **Promotion** – The result of the widened operation is pushed as an `i64`
-   value.  Subsequent arithmetic will operate on the larger type. Should an
-   `i64` overflow occur the same mechanism could promote to `VAL_BIGINT` using a
-   big‑integer library (not yet implemented).
+   value. Subsequent arithmetic will operate on the larger type. Overflows beyond
+   `i64` currently trigger a warning.
 3. **Parsing literals** – Unsuffixed integer literals continue to parse as
    `i32` when they fit in 32 bits. Larger literals become `i64`. Explicit
    suffixes (e.g. `123_i32`) can still be used to force a specific type.
@@ -47,7 +45,7 @@ if (operation_on_i32_overflows(a, b)) {
     int64_t lb = (int64_t)b;
     int64_t lr;
     if (__builtin_add_overflow(la, lb, &lr)) {
-        // Future: promote to BigInt
+        // Overflow beyond i64 currently results in a wraparound
     }
     push_i64(lr);
 } else {
