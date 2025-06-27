@@ -4,6 +4,8 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <gmp.h>
 
 #include "../../include/memory.h"
 #include "../../include/value.h"
@@ -61,6 +63,12 @@ void printValue(Value value) {
                    (long long)AS_RANGE_ITERATOR(value)->end);
             break;
         }
+        case VAL_BIGINT: {
+            char* str = mpz_get_str(NULL, 10, AS_BIGINT(value)->value);
+            printf("%s", str);
+            free(str);
+            break;
+        }
         default:
             printf("unknown");
             break;
@@ -99,6 +107,8 @@ bool valuesEqual(Value a, Value b) {
             return a.as.error == b.as.error;
         case VAL_RANGE_ITERATOR:
             return a.as.rangeIter == b.as.rangeIter;
+        case VAL_BIGINT:
+            return mpz_cmp(AS_BIGINT(a)->value, AS_BIGINT(b)->value) == 0;
         default: return false;
     }
 }
