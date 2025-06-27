@@ -86,6 +86,18 @@ static bool isNumericKind(TypeKind kind) {
            kind == TYPE_F64;
 }
 
+// Evaluate an AST node to an integer constant if possible.
+// Returns true on success and stores the value in out.
+static bool evaluateConstantInt(ASTNode* node, int64_t* out) {
+    if (!node || node->type != AST_LITERAL) return false;
+    Value v = node->data.literal;
+    if (IS_I32(v)) { *out = AS_I32(v); return true; }
+    if (IS_I64(v)) { *out = AS_I64(v); return true; }
+    if (IS_U32(v)) { *out = (int64_t)AS_U32(v); return true; }
+    if (IS_U64(v)) { *out = (int64_t)AS_U64(v); return true; }
+    return false;
+}
+
 static opCode conversionOp(TypeKind from, TypeKind to) {
     if (from == to) return OP_RETURN; // unused placeholder when no conversion
     if (from == TYPE_I32 && to == TYPE_F64) return OP_I32_TO_F64;
@@ -1432,9 +1444,28 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 return;
             }
 
+            // Analyse constant loop bounds for potential overflow
+            int64_t startVal, endVal, stepVal = 1;
+            bool startConst = evaluateConstantInt(node->data.forStmt.startExpr, &startVal);
+            bool endConst = evaluateConstantInt(node->data.forStmt.endExpr, &endVal);
+            bool stepConst = node->data.forStmt.stepExpr ?
+                                evaluateConstantInt(node->data.forStmt.stepExpr, &stepVal) : true;
+            bool promoteIter = false;
+            if ((startConst && (startVal > INT32_MAX || startVal < INT32_MIN)) ||
+                (endConst && (endVal > INT32_MAX || endVal < INT32_MIN))) {
+                promoteIter = true;
+            }
+            if (!promoteIter && startConst && endConst && stepConst) {
+                long double diff = (long double)endVal - (long double)startVal;
+                long double steps = stepVal != 0 ? diff / (long double)stepVal : diff;
+                long double last = (long double)startVal + steps * (long double)stepVal;
+                if (last > INT32_MAX || last < INT32_MIN) promoteIter = true;
+            }
+
             beginScope(compiler);
-            // Define the iterator variable
-            uint8_t index = defineVariable(compiler, node->data.forStmt.iteratorName, startType);
+            // Define the iterator variable, promoting to i64 if needed
+            Type* iterType = promoteIter ? getPrimitiveType(TYPE_I64) : startType;
+            uint8_t index = defineVariable(compiler, node->data.forStmt.iteratorName, iterType);
             node->data.forStmt.iteratorIndex = index;
 
             // Type check the body

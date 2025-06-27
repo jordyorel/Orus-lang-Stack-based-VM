@@ -9,7 +9,7 @@
 #include <string.h>
 
 #define ORBC_MAGIC 0x4F524243
-#define ORBC_VERSION 2
+#define ORBC_VERSION 3
 
 static bool writeValue(FILE* f, Value v) {
     fwrite(&v.type, 1, 1, f);
