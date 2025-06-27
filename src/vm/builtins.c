@@ -53,13 +53,17 @@ static Value native_substring(int argCount, Value* args) {
         vmRuntimeError("substring() takes exactly three arguments.");
         return NIL_VAL;
     }
-    if (!IS_STRING(args[0]) || !IS_I32(args[1]) || !IS_I32(args[2])) {
-        vmRuntimeError("substring() expects (string, i32, i32).");
+    if (!IS_STRING(args[0]) ||
+        !(IS_I32(args[1]) || IS_I64(args[1])) ||
+        !(IS_I32(args[2]) || IS_I64(args[2]))) {
+        vmRuntimeError("substring() expects (string, i32/i64, i32/i64).");
         return NIL_VAL;
     }
     ObjString* str = AS_STRING(args[0]);
-    int start = AS_I32(args[1]);
-    int length = AS_I32(args[2]);
+    int64_t s = IS_I32(args[1]) ? AS_I32(args[1]) : AS_I64(args[1]);
+    int64_t l = IS_I32(args[2]) ? AS_I32(args[2]) : AS_I64(args[2]);
+    int start = (int)s;
+    int length = (int)l;
     if (start < 0) start = 0;
     if (start > str->length) start = str->length;
     if (length < 0) length = 0;
@@ -322,12 +326,13 @@ static Value native_float(int argCount, Value* args) {
  * Compute base^exp using the platform math library.
  */
 static Value native_pow(int argCount, Value* args) {
-    if (argCount != 2 || !IS_F64(args[0]) || !IS_I32(args[1])) {
-        vmRuntimeError("native_pow expects (f64, i32).");
+    if (argCount != 2 || !IS_F64(args[0]) ||
+        !(IS_I32(args[1]) || IS_I64(args[1]))) {
+        vmRuntimeError("native_pow expects (f64, i32/i64).");
         return NIL_VAL;
     }
     double base = AS_F64(args[0]);
-    int exp = AS_I32(args[1]);
+    int64_t exp = IS_I32(args[1]) ? AS_I32(args[1]) : AS_I64(args[1]);
     return F64_VAL(pow(base, (double)exp));
 }
 
@@ -358,16 +363,19 @@ static Value native_sum(int argCount, Value* args) {
         return NIL_VAL;
     }
     ObjArray* arr = AS_ARRAY(args[0]);
-    double total = 0;
+    long double total = 0;
     bool asFloat = false;
+    bool useI64 = false;
     for (int i = 0; i < arr->length; i++) {
         Value v = arr->elements[i];
         if (IS_I32(v)) {
             total += AS_I32(v);
         } else if (IS_I64(v)) {
-            total += AS_I64(v);
+            total += AS_I64(v); useI64 = true;
         } else if (IS_U32(v)) {
             total += AS_U32(v);
+        } else if (IS_U64(v)) {
+            total += AS_U64(v); useI64 = true;
         } else if (IS_F64(v)) {
             total += AS_F64(v);
             asFloat = true;
@@ -376,10 +384,13 @@ static Value native_sum(int argCount, Value* args) {
             return NIL_VAL;
         }
     }
-    if (asFloat)
-        return F64_VAL(total);
-    else
-        return I32_VAL((int32_t)total);
+    if (asFloat) {
+        return F64_VAL((double)total);
+    }
+    if (useI64 || total > INT32_MAX || total < INT32_MIN) {
+        return I64_VAL((int64_t)total);
+    }
+    return I32_VAL((int32_t)total);
 }
 
 /**
@@ -403,12 +414,15 @@ static Value native_min(int argCount, Value* args) {
     Value first = arr->elements[0];
     double best;
     bool asFloat = false;
+    bool useI64 = false;
     if (IS_I32(first)) {
         best = AS_I32(first);
     } else if (IS_I64(first)) {
-        best = AS_I64(first);
+        best = AS_I64(first); useI64 = true;
     } else if (IS_U32(first)) {
         best = AS_U32(first);
+    } else if (IS_U64(first)) {
+        best = AS_U64(first); useI64 = true;
     } else if (IS_F64(first)) {
         best = AS_F64(first);
         asFloat = true;
@@ -423,9 +437,11 @@ static Value native_min(int argCount, Value* args) {
         if (IS_I32(v)) {
             val = AS_I32(v);
         } else if (IS_I64(v)) {
-            val = AS_I64(v);
+            val = AS_I64(v); useI64 = true;
         } else if (IS_U32(v)) {
             val = AS_U32(v);
+        } else if (IS_U64(v)) {
+            val = AS_U64(v); useI64 = true;
         } else if (IS_F64(v)) {
             val = AS_F64(v);
             asFloat = true;
@@ -436,10 +452,13 @@ static Value native_min(int argCount, Value* args) {
         if (val < best) best = val;
     }
 
-    if (asFloat)
+    if (asFloat) {
         return F64_VAL(best);
-    else
-        return I32_VAL((int32_t)best);
+    }
+    if (useI64 || best > INT32_MAX || best < INT32_MIN) {
+        return I64_VAL((int64_t)best);
+    }
+    return I32_VAL((int32_t)best);
 }
 
 /**
@@ -463,12 +482,15 @@ static Value native_max(int argCount, Value* args) {
     Value first = arr->elements[0];
     double best;
     bool asFloat = false;
+    bool useI64 = false;
     if (IS_I32(first)) {
         best = AS_I32(first);
     } else if (IS_I64(first)) {
-        best = AS_I64(first);
+        best = AS_I64(first); useI64 = true;
     } else if (IS_U32(first)) {
         best = AS_U32(first);
+    } else if (IS_U64(first)) {
+        best = AS_U64(first); useI64 = true;
     } else if (IS_F64(first)) {
         best = AS_F64(first);
         asFloat = true;
@@ -483,9 +505,11 @@ static Value native_max(int argCount, Value* args) {
         if (IS_I32(v)) {
             val = AS_I32(v);
         } else if (IS_I64(v)) {
-            val = AS_I64(v);
+            val = AS_I64(v); useI64 = true;
         } else if (IS_U32(v)) {
             val = AS_U32(v);
+        } else if (IS_U64(v)) {
+            val = AS_U64(v); useI64 = true;
         } else if (IS_F64(v)) {
             val = AS_F64(v);
             asFloat = true;
@@ -496,10 +520,13 @@ static Value native_max(int argCount, Value* args) {
         if (val > best) best = val;
     }
 
-    if (asFloat)
+    if (asFloat) {
         return F64_VAL(best);
-    else
-        return I32_VAL((int32_t)best);
+    }
+    if (useI64 || best > INT32_MAX || best < INT32_MIN) {
+        return I64_VAL((int64_t)best);
+    }
+    return I32_VAL((int32_t)best);
 }
 
 // ---------- sorted() built-in ----------
@@ -514,7 +541,7 @@ static Value native_max(int argCount, Value* args) {
  * @return  True if the value is a number.
  */
 static bool isNumber(Value v) {
-    return IS_I32(v) || IS_U32(v) || IS_F64(v);
+    return IS_I32(v) || IS_I64(v) || IS_U32(v) || IS_U64(v) || IS_F64(v);
 }
 
 /**
@@ -524,7 +551,9 @@ static bool isNumber(Value v) {
  */
 static double toNumber(Value v) {
     if (IS_I32(v)) return AS_I32(v);
+    if (IS_I64(v)) return (double)AS_I64(v);
     if (IS_U32(v)) return AS_U32(v);
+    if (IS_U64(v)) return (double)AS_U64(v);
     return AS_F64(v);
 }
 
