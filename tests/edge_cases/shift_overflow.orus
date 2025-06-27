@@ -1,0 +1,4 @@
+fn main() {
+    let v: i32 = 1
+    print(v << 31)
+}
