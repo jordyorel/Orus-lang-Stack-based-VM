@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <limits.h>
 #include "value.h"
 #include "vm.h"
 #include "memory.h"
@@ -668,7 +669,13 @@ static inline void shiftLeftI32(VM* vm, InterpretResult* result) {
         return;
     }
     uint32_t shift = ((uint32_t)b) & 31u;
-    vmPush(vm, I32_VAL(a << shift));
+    int64_t extended = ((int64_t)a) << shift;
+    if (extended > INT32_MAX || extended < INT32_MIN) {
+        handleOverflow("i32 overflow");
+        vmPushI64(vm, extended);
+    } else {
+        vmPush(vm, I32_VAL((int32_t)extended));
+    }
 }
 
 static inline void shiftRightI32(VM* vm, InterpretResult* result) {
@@ -692,7 +699,11 @@ static inline void shiftLeftI64(VM* vm, InterpretResult* result) {
         return;
     }
     uint32_t shift = ((uint64_t)b) & 63u;
-    vmPushI64(vm, a << shift);
+    __int128 extended = (__int128)a << shift;
+    if (extended > INT64_MAX || extended < INT64_MIN) {
+        handleOverflow("i64 overflow");
+    }
+    vmPushI64(vm, (int64_t)extended);
 }
 
 static inline void shiftRightI64(VM* vm, InterpretResult* result) {
