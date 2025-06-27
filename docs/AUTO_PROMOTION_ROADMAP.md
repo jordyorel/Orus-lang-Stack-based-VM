@@ -4,11 +4,11 @@ This document outlines the planned steps to deliver automatic integer promotion 
 It complements the design in `auto_integer_promotion.md` and breaks down the work into actionable phases.
 
 ## Phase 1 – Runtime Promotion (2-3 weeks)
-- Detect `i32` overflows in `binaryOpI32` and related helpers using `__builtin_*_overflow`.
-- On overflow, widen operands to `i64`, perform the operation again and push an `i64` result.
-- Update the VM stack helpers so `vmPushI64` and `vmPopI64` work seamlessly with promoted values.
-- Integrate overflow checks into shift, increment and other integer opcodes.
-- Provide an environment flag to disable overflow warnings during rollout.
+- [x] Detect `i32` overflows in `binaryOpI32` and related helpers using `__builtin_*_overflow`.
+- [x] On overflow, widen operands to `i64`, perform the operation again and push an `i64` result.
+- [x] Update the VM stack helpers so `vmPushI64` and `vmPopI64` work seamlessly with promoted values.
+- [x] Integrate overflow checks into shift, increment and other integer opcodes.
+- [x] Provide an environment flag to disable overflow warnings during rollout.
 
 ## Phase 2 – IR and Type Adjustments (3-4 weeks)
 - Allow `Value` instances to upgrade from `VAL_I32` to `VAL_I64` without type errors.
