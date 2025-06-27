@@ -11,5 +11,6 @@ control runtime behaviour. Set them in your shell before invoking
 | `ORUS_CACHE_PATH` | Directory for cached `.obc` bytecode files. |
 | `ORUS_DEV_MODE` | When non-empty, reloads modules if their source changes. |
 | `ORUS_SUPPRESS_WARNINGS` | Suppress overflow warnings when set. |
+| `ORUS_PROMOTION_HINTS` | Print integer promotion hints during compilation. |
 
 All variables are optional and can be left unset for default behaviour.

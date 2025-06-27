@@ -18,8 +18,8 @@ It complements the design in `auto_integer_promotion.md` and breaks down the wor
 - [x] Update serialization and bytecode formats if necessary to record promoted widths.
 
 - [x] Enhance the type checker to analyse loops and constant expressions for potential overflow.
-- Automatically generate `i64` bytecode in cases where overflow is provably possible.
-- Emit promotion hints in debug builds to validate the inference behaviour.
+- [x] Automatically generate `i64` bytecode in cases where overflow is provably possible.
+- [x] Emit promotion hints in debug builds to validate the inference behaviour.
 
 ## Phase 4 – BigInt Foundations (optional)
 - Introduce a `VAL_BIGINT` type using an external big‑integer library.

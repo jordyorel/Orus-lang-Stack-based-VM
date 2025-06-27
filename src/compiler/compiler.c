@@ -98,6 +98,36 @@ static bool evaluateConstantInt(ASTNode* node, int64_t* out) {
     return false;
 }
 
+// Determine if a binary operation on two constant integer nodes would overflow
+// the 32-bit signed range. Only handles +, -, * operators.
+static bool constantBinaryOverflows(ASTNode* left, ASTNode* right,
+                                    TokenType op) {
+    int64_t a, b, r = 0;
+    if (!evaluateConstantInt(left, &a) || !evaluateConstantInt(right, &b)) {
+        return false;
+    }
+
+    bool overflow = false;
+    switch (op) {
+        case TOKEN_PLUS:
+            overflow = __builtin_add_overflow(a, b, &r);
+            break;
+        case TOKEN_MINUS:
+            overflow = __builtin_sub_overflow(a, b, &r);
+            break;
+        case TOKEN_STAR:
+            overflow = __builtin_mul_overflow(a, b, &r);
+            break;
+        default:
+            return false;
+    }
+
+    if (!overflow) {
+        overflow = (r > INT32_MAX) || (r < INT32_MIN);
+    }
+    return overflow;
+}
+
 static opCode conversionOp(TypeKind from, TypeKind to) {
     if (from == to) return OP_RETURN; // unused placeholder when no conversion
     if (from == TYPE_I32 && to == TYPE_F64) return OP_I32_TO_F64;
@@ -736,6 +766,22 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     error(compiler,
                           "Unsupported binary operator in type checker.");
                     return;
+            }
+
+            if (node->valueType && node->valueType->kind == TYPE_I32 &&
+                (operator == TOKEN_PLUS || operator == TOKEN_MINUS ||
+                 operator == TOKEN_STAR) &&
+                constantBinaryOverflows(node->left, node->right, operator)) {
+                node->valueType = getPrimitiveType(TYPE_I64);
+                node->data.operation.convertLeft = leftType->kind != TYPE_I64;
+                node->data.operation.convertRight = rightType->kind != TYPE_I64;
+#ifdef DEBUG_PROMOTION_HINTS
+                if (vm.promotionHints) {
+                    fprintf(stderr,
+                            "[hint] promoted binary operation at line %d to i64\n",
+                            node->line);
+                }
+#endif
             }
             break;
         }
@@ -1461,6 +1507,13 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 long double last = (long double)startVal + steps * (long double)stepVal;
                 if (last > INT32_MAX || last < INT32_MIN) promoteIter = true;
             }
+#ifdef DEBUG_PROMOTION_HINTS
+            if (promoteIter && vm.promotionHints) {
+                fprintf(stderr,
+                        "[hint] promoting for-loop iterator at line %d to i64\n",
+                        node->line);
+            }
+#endif
 
             beginScope(compiler);
             // Define the iterator variable, promoting to i64 if needed
