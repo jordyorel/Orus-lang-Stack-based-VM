@@ -1,0 +1,9 @@
+// Bit shift operations exceeding normal 32/64-bit boundaries
+fn main() {
+    let a = 1 << 33
+    print(a)
+    let b = 1i64 << 63
+    print(b)
+    let c = 1i64 << 64
+    print(c)
+}

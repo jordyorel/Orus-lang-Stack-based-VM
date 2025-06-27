@@ -1,0 +1,15 @@
+// Summing a large array forces promotion when total exceeds i32 range
+fn main() {
+    let data: [i32] = []
+    for i in 0..1_000_000 {
+        push(data, i as i32)
+    }
+    let mut total = 0
+    let mut idx: i32 = 0
+    let n: i32 = len(data)
+    while idx < n {
+        total += data[idx]
+        idx += 1
+    }
+    print(total)
+}

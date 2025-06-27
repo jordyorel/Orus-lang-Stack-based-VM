@@ -1,0 +1,8 @@
+// Repeated subtraction to test underflow handling
+fn main() {
+    let mut x = -2147483648
+    for _ in 0..10 {
+        x -= 1
+    }
+    print(x)
+}

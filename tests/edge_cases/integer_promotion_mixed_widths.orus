@@ -1,0 +1,8 @@
+// Mixed width arithmetic combining i32 and i64 values
+fn main() {
+    let big: i64 = 3_000_000_000
+    let small: i32 = big as i32
+    let a: i64 = 2
+    let res = (big * a) + (small as i64) - (1 as i64)
+    print(res)
+}
