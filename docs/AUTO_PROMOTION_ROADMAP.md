@@ -14,11 +14,10 @@ It complements the design in `auto_integer_promotion.md` and breaks down the wor
 
 - [x] Allow `Value` instances to upgrade from `VAL_I32` to `VAL_I64` without type errors.
 - [x] Extend `checkValueAgainstType` so an `i64` value is acceptable for `i32` variables when it still fits.
-- Review built‑in functions and the standard library for assumptions about fixed widths.
-- Update serialization and bytecode formats if necessary to record promoted widths.
+- [x] Review built‑in functions and the standard library for assumptions about fixed widths.
+- [x] Update serialization and bytecode formats if necessary to record promoted widths.
 
-## Phase 3 – Compiler Inference (4-6 weeks)
-- Enhance the type checker to analyse loops and constant expressions for potential overflow.
+- [x] Enhance the type checker to analyse loops and constant expressions for potential overflow.
 - Automatically generate `i64` bytecode in cases where overflow is provably possible.
 - Emit promotion hints in debug builds to validate the inference behaviour.
 
