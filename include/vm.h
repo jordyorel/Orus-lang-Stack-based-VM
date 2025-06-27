@@ -94,6 +94,7 @@ typedef struct {
     const char* stdPath;
     const char* cachePath;
     bool devMode;
+    bool suppressWarnings;
 
     // Garbage collector state
     Obj* objects;

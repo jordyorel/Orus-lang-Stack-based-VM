@@ -10,5 +10,6 @@ control runtime behaviour. Set them in your shell before invoking
 | `ORUS_PATH` | Location of the standard library directory. Defaults to `./std`. |
 | `ORUS_CACHE_PATH` | Directory for cached `.obc` bytecode files. |
 | `ORUS_DEV_MODE` | When non-empty, reloads modules if their source changes. |
+| `ORUS_SUPPRESS_WARNINGS` | Suppress overflow warnings when set. |
 
 All variables are optional and can be left unset for default behaviour.
