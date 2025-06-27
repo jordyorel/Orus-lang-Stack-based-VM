@@ -1,8 +1,7 @@
 # Orus Language Development Roadmap
 
-**Goal**: Transform Orus from an experimental language into a production-ready programming language suitable for real-world applications and widespread adoption.
 
-**Current Version**: 0.2.0 (revised from previous 0.7.0 for conservative versioning)  
+**Current Version**: 0.2.1
 **Target Production Version**: 1.0.0  
 **Estimated Timeline**: 24-36 months
 
@@ -14,7 +13,7 @@ This roadmap adopts a **conservative versioning approach** where:
 
 - **Version 1.0.0** = True production readiness with complete ecosystem
 - **0.x versions** = Development milestones with increasing capability
-- **Current 0.2.0** = Honest assessment of production completeness
+- **Current 0.2.1** = Honest assessment of production completeness
 
 ### Rationale for Conservative Versioning
 
@@ -26,7 +25,7 @@ This roadmap adopts a **conservative versioning approach** where:
 - ❌ Minimal standard library
 - ❌ Basic tooling only
 
-**What 0.2.0 Represents:**
+**What 0.2.1 Represents:**
 - **Honest**: ~20-25% complete toward production
 - **Realistic**: Strong language foundations but missing ecosystem
 
