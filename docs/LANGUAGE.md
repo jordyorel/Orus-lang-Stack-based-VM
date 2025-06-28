@@ -427,7 +427,7 @@ Code can be split into multiple files. Use `use` to load an entire module. Only 
 The import system design is described further in `docs/import.md`.
 
 ```orus
-use math::utils
+use math.utils
 use datetime as dt
 
 fn main() {
@@ -441,7 +441,7 @@ Modules are executed once. Importing the same file twice causes a runtime error.
 An alias can shorten the module name:
 
 ```orus
-use math::utils as mu
+use math.utils as mu
 mu.helper()
 ```
 

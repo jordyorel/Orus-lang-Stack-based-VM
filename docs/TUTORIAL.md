@@ -110,7 +110,7 @@ fn main() {
 Use `use *` to import everything:
 
 ```orus
-use math::*
+use math.*
 ```
 
 ## Generics
@@ -148,7 +148,7 @@ Use `try`/`catch` to deal with failures:
 ```orus
 fn read(path: string) -> string {
     try {
-        return std::fs::read_to_string(path)
+        return std.fs.read_to_string(path)
     } catch err {
         print("failed: {}", err)
         return ""
@@ -1691,7 +1691,7 @@ fn main() {
 
 ### `tests/constants/use_module.orus`
 ```orus
-use tests::constants::math
+use tests.constants.math
 
 fn main() {
     print("Value: {}", math.PI)
@@ -2593,8 +2593,8 @@ fn main() {
 
 ### `tests/edge_cases/function_module_edges.orus`
 ```orus
-use tests::edge_cases::module_a
-use tests::edge_cases::module_b
+use tests.edge_cases.module_a
+use tests.edge_cases.module_b
 
 fn local_fn(a: i32, b: i32) -> i32 {
     return a + b
@@ -2706,8 +2706,8 @@ fn main() {
 
 ### `tests/edge_cases/module_imports.orus`
 ```orus
-use tests::edge_cases::module_a
-use tests::edge_cases::module_b
+use tests.edge_cases.module_a
+use tests.edge_cases.module_b
 
 fn main() {
     // Modules are imported for side effects only
@@ -2973,7 +2973,7 @@ fn main() {
 
 ### `tests/errors/import_cycle.orus`
 ```orus
-use tests::modules::cycles::cycle_a
+use tests.modules.cycles.cycle_a
 
 fn main() {
 }
@@ -2990,7 +2990,7 @@ fn main() {
 
 ### `tests/errors/import_missing.orus`
 ```orus
-use tests::modules::not_there
+use tests.modules.not_there
 
 fn main() {
 }
@@ -2998,7 +2998,7 @@ fn main() {
 
 ### `tests/errors/import_private.orus`
 ```orus
-use tests::modules::pub_module
+use tests.modules.pub_module
 
 fn main() {
     private_fn()
@@ -3008,8 +3008,8 @@ fn main() {
 
 ### `tests/errors/import_twice.orus`
 ```orus
-use tests::modules::hello_module
-use tests::modules::hello_module
+use tests.modules.hello_module
+use tests.modules.hello_module
 
 fn main() {
     print("done")
@@ -3019,7 +3019,7 @@ fn main() {
 
 ### `tests/errors/missing_export.orus`
 ```orus
-use tests::modules::hello_module::{unknown}
+use tests.modules.hello_module::{unknown}
 
 fn main() {
 }
@@ -3154,8 +3154,8 @@ fn main() {
 
 ### `tests/errors/use_twice.orus`
 ```orus
-use tests::modules::hello_module
-use tests::modules::hello_module::{greet}
+use tests.modules.hello_module
+use tests.modules.hello_module::{greet}
 
 fn main() {
     greet()
@@ -4181,7 +4181,7 @@ fn main() -> i32 {
 Test calling functions from main and importing modules
 ```orus
 // Test calling functions from main and importing modules
-use tests::modules::hello_module
+use tests.modules.hello_module
 
 fn main() {
     print("Main ran")
@@ -4239,7 +4239,7 @@ fn main() {
 
 ### `tests/modules/parse_use_alias.orus`
 ```orus
-use tests::modules::hello_module as hm
+use tests.modules.hello_module as hm
 
 fn main() {
     print("alias parsed")
@@ -4248,7 +4248,7 @@ fn main() {
 
 ### `tests/modules/parse_use_module.orus`
 ```orus
-use tests::modules::hello_module
+use tests.modules.hello_module
 
 fn main() {
     print("module parsed")
@@ -4257,7 +4257,7 @@ fn main() {
 
 ### `tests/modules/parse_use_selective.orus`
 ```orus
-use tests::modules::hello_module
+use tests.modules.hello_module
 
 fn main() {
     print("select parsed")
@@ -4300,7 +4300,7 @@ fn main() {
 
 ### `tests/modules/use_bind.orus`
 ```orus
-use tests::modules::hello_module
+use tests.modules.hello_module
 
 fn main() {
     hello_module.greet()
@@ -4309,7 +4309,7 @@ fn main() {
 
 ### `tests/modules/use_pub_function.orus`
 ```orus
-use tests::modules::pub_module
+use tests.modules.pub_module
 
 fn main() {
     pub_module.public_fn()
@@ -4319,7 +4319,7 @@ fn main() {
 
 ### `tests/modules/use_pub_struct.orus`
 ```orus
-use tests::modules::pub_struct_module
+use tests.modules.pub_struct_module
 
 fn main() {
     let p = pub_struct_module.make_point(3, 4)
@@ -4330,7 +4330,7 @@ fn main() {
 
 ### `tests/modules/use_selective.orus`
 ```orus
-use tests::modules::hello_module
+use tests.modules.hello_module
 
 fn main() {
     hello_module.greet()
@@ -4339,7 +4339,7 @@ fn main() {
 
 ### `tests/modules/cycles/cycle_a.orus`
 ```orus
-use tests::modules::cycles::cycle_b
+use tests.modules.cycles.cycle_b
 
 pub fn greet_a() {
     print("Hello from A")
@@ -4350,7 +4350,7 @@ fn main() {}
 
 ### `tests/modules/cycles/cycle_b.orus`
 ```orus
-use tests::modules::cycles::cycle_a
+use tests.modules.cycles.cycle_a
 
 pub fn greet_b() {
     print("Hello from B")
@@ -4361,7 +4361,7 @@ fn main() {}
 
 ### `tests/projects/cross_module_generics/src/main.orus`
 ```orus
-use src::util
+use src.util
 
 fn main() {
     print(util.identity<i32>(42))
@@ -4385,7 +4385,7 @@ pub fn greet() {
 
 ### `tests/projects/simple_project/src/main.orus`
 ```orus
-use src::helper::{greet}
+use src.helper::{greet}
 
 fn main() {
     greet()
@@ -4394,7 +4394,7 @@ fn main() {
 
 ### `tests/stdlib/datetime_module.orus`
 ```orus
-use std::datetime
+use std.datetime
 
 fn main() {
     let epoch = datetime.from_timestamp(0.0)
@@ -4424,7 +4424,7 @@ fn main() {
 
 ### `tests/stdlib/math_module.orus`
 ```orus
-use std::math
+use std.math
 
 fn main() {
     print(math.abs(-5.0))
@@ -4448,7 +4448,7 @@ fn main() {
 
 ### `tests/stdlib/random_module.orus`
 ```orus
-use std::random
+use std.random
 
 fn main() {
     print(random.randint(1, 10))

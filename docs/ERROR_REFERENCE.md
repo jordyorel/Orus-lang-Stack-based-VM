@@ -76,8 +76,8 @@ The parser expects specific tokens at each point in the grammar. When a token do
 - `Expect alias name.`
 - `Expect symbol name.`
 - `Expect '}' after symbol list.`
-- `Expect symbol name after '::'.`
-- ``import` statements are deprecated; use `use module::path` instead``
+- `Expect symbol name after '.'.`
+- ``import` statements are deprecated; use `use module.path` instead``
 - `Expect module path after 'use'.`
 - `Expect module path string after 'import'.`
 

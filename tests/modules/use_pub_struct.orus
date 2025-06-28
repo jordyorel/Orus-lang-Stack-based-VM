@@ -1,4 +1,4 @@
-use tests::modules::pub_struct_module
+use tests.modules.pub_struct_module
 
 fn main() {
     let p = pub_struct_module.make_point(3 as i32, 4 as i32)

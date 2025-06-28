@@ -1,4 +1,4 @@
-use std::random
+use std.random
 
 fn main() {
     print(random.randint(1 as i32, 10 as i32))

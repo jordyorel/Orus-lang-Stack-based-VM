@@ -1,4 +1,4 @@
-use std::datetime
+use std.datetime
 
 fn main() {
     let epoch = datetime.from_timestamp(0.0)

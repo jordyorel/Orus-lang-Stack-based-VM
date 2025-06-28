@@ -91,13 +91,13 @@ This roadmap adopts a **conservative versioning approach** where:
 
 ```orus
 // Target API examples
-use std::fs
-use std::env
-use std::process
+use std.fs
+use std.env
+use std.process
 
-let content = fs::read_text("config.txt")?
-let home = env::get("HOME")
-let result = process::run("git", ["status"])
+let content = fs.read_text("config.txt")?
+let home = env.get("HOME")
+let result = process.run("git", ["status"])
 ```
 
 ### 🔧 **Priority 2: Core Tooling Infrastructure**
