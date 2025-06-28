@@ -304,7 +304,7 @@ void emitTypeMismatchError(Compiler* compiler,
         snprintf(helpBuffer, sizeof(helpBuffer),
                 "to convert float to integer, use explicit casting: `value as i32`. Example: `let x: i32 = 3.14 as i32` (result: 3)");
         snprintf(noteBuffer, sizeof(noteBuffer),
-                "floating-point to integer conversions truncate the decimal part. For rounding, use math::round() first");
+                "floating-point to integer conversions truncate the decimal part. For rounding, use math.round() first");
         note = noteBuffer;
     } 
     else if (strstr(expectedType, "f64") && (strstr(actualType, "i32") || strstr(actualType, "u32"))) {
@@ -495,12 +495,12 @@ void emitUndefinedFunctionError(Compiler* compiler, Token* token) {
     char baseNote[128];
     
     // Provide context-specific help based on function name patterns
-    if (strstr(nameBuf, "::")) {
+    if (strstr(nameBuf, ".")) {
         snprintf(helpBuffer, sizeof(helpBuffer),
-                "function `%s` looks like a module function. Make sure to import the module with `use module_name` or check the module path",
+                "function `%s` looks like a module function. Make sure to import the module with `use module.name` or check the module path",
                 nameBuf);
         snprintf(baseNote, sizeof(baseNote),
-                "module functions require importing the module first. Example: `use std::math` then `math::sqrt(value)`");
+                "module functions require importing the module first. Example: `use std.math` then `math.sqrt(value)`");
     } else if (strstr(nameBuf, "print") || strstr(nameBuf, "println")) {
         snprintf(helpBuffer, sizeof(helpBuffer),
                 "did you mean the built-in `print()` function? It's used like: `print(\"Hello\", variable)` for multiple values");

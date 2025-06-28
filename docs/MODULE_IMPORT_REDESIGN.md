@@ -8,7 +8,7 @@ use tests.modules.hello_module
 
 The goal is to remove the `::` separator entirely and replace it with `.` for module paths.
 
-**Status:** Phase 1 (Lexer and Parser updates) has been implemented.
+**Status:** Phase 3 (Standard library and documentation updates) has been implemented. Migration cleanup is next.
 
 ## 1. Lexer and Parser
 

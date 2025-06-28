@@ -3019,9 +3019,10 @@ fn main() {
 
 ### `tests/errors/missing_export.orus`
 ```orus
-use tests.modules.hello_module::{unknown}
+use tests.modules.hello_module
 
 fn main() {
+    hello_module.unknown()
 }
 ```
 
@@ -3155,10 +3156,10 @@ fn main() {
 ### `tests/errors/use_twice.orus`
 ```orus
 use tests.modules.hello_module
-use tests.modules.hello_module::{greet}
+use tests.modules.hello_module
 
 fn main() {
-    greet()
+    hello_module.greet()
 }
 ```
 
@@ -4385,10 +4386,10 @@ pub fn greet() {
 
 ### `tests/projects/simple_project/src/main.orus`
 ```orus
-use src.helper::{greet}
+use src.helper
 
 fn main() {
-    greet()
+    helper.greet()
 }
 ```
 

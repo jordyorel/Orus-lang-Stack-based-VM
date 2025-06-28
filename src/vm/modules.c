@@ -28,6 +28,37 @@ static char module_error_buffer[256];
 
 extern VM vm;
 
+static char* normalize_module_path(const char* path) {
+    size_t len = strlen(path);
+    bool hasSlash = strchr(path, '/') != NULL;
+    bool hasExt = len > 5 && strcmp(path + len - 5, ".orus") == 0;
+
+    // Convert dot-separated paths to slashes when no slashes present
+    if (!hasSlash && strchr(path, '.')) {
+        char buf[256];
+        size_t pos = 0;
+        for (size_t i = 0; i < len && pos < sizeof(buf) - 6; i++) {
+            buf[pos++] = (path[i] == '.') ? '/' : path[i];
+        }
+        if (!hasExt && pos < sizeof(buf) - 5) {
+            memcpy(buf + pos, ".orus", 5);
+            pos += 5;
+        }
+        buf[pos] = '\0';
+        return strdup(buf);
+    }
+
+    if (!hasExt) {
+        char* result = malloc(len + 6);
+        memcpy(result, path, len);
+        memcpy(result + len, ".orus", 5);
+        result[len + 5] = '\0';
+        return result;
+    }
+
+    return strdup(path);
+}
+
 static char* cache_path_for(const char* module_path) {
     if (!vm.cachePath) return NULL;
     const char* base = strrchr(module_path, '/');
@@ -170,39 +201,42 @@ Export* get_export(Module* module, const char* name) {
  * @return     Interpretation result code.
  */
 InterpretResult compile_module_only(const char* path) {
+    char* normPath = normalize_module_path(path);
     moduleError = NULL;
-    if (traceImports) fprintf(stderr, "[import] loading %s\n", path);
+    if (traceImports) fprintf(stderr, "[import] loading %s\n", normPath);
     for (int i = 0; i < loading_stack_count; i++) {
-        if (strcmp(loading_stack[i], path) == 0) {
+        if (strcmp(loading_stack[i], normPath) == 0) {
             snprintf(module_error_buffer, sizeof(module_error_buffer),
-                     "Import cycle detected for module `%s`", path);
+                     "Import cycle detected for module `%s`", normPath);
             moduleError = module_error_buffer;
+            free(normPath);
             return INTERPRET_COMPILE_ERROR;
         }
     }
 
     if (loading_stack_count < UINT8_MAX)
-        loading_stack[loading_stack_count++] = path;
+        loading_stack[loading_stack_count++] = normPath;
 
-    if (get_module(path)) {
+    if (get_module(normPath)) {
         loading_stack_count--;
+        free(normPath);
         return INTERPRET_OK;
     }
 
     char* diskPath = NULL;
     long mtime = 0;
     bool fromEmbedded = false;
-    char* source = load_module_with_fallback(path, &diskPath, &mtime, &fromEmbedded);
+    char* source = load_module_with_fallback(normPath, &diskPath, &mtime, &fromEmbedded);
     if (!source) {
         snprintf(module_error_buffer, sizeof(module_error_buffer),
-                 "Module `%s` not found", path);
+                 "Module `%s` not found", normPath);
         moduleError = module_error_buffer;
         loading_stack_count--;
         return INTERPRET_RUNTIME_ERROR;
     }
 
     int startGlobals = vm.variableCount;
-    char* cacheFile = cache_path_for(path);
+    char* cacheFile = cache_path_for(normPath);
     Chunk* chunk = NULL;
     if (cacheFile) {
         long cached_mtime;
@@ -211,7 +245,7 @@ InterpretResult compile_module_only(const char* path) {
     }
     ASTNode* ast = NULL;
     if (!chunk) {
-        ast = parse_module_source(source, path);
+        ast = parse_module_source(source, normPath);
         if (!ast) {
             free(source);
             loading_stack_count--;
@@ -219,7 +253,7 @@ InterpretResult compile_module_only(const char* path) {
             return INTERPRET_COMPILE_ERROR;
         }
 
-        chunk = compile_module_ast(ast, path);
+        chunk = compile_module_ast(ast, normPath);
         if (!chunk) {
             free(source);
             loading_stack_count--;
@@ -230,9 +264,9 @@ InterpretResult compile_module_only(const char* path) {
     }
 
     Module mod;
-    mod.module_name = strdup(path);
-    const char* base = strrchr(path, '/');
-    base = base ? base + 1 : path;
+    mod.module_name = strdup(normPath);
+    const char* base = strrchr(normPath, '/');
+    base = base ? base + 1 : normPath;
     size_t len = strlen(base);
     if (len > 5 && strcmp(base + len - 5, ".orus") == 0) len -= 5;
     mod.name = (char*)malloc(len + 1);
@@ -260,5 +294,6 @@ InterpretResult compile_module_only(const char* path) {
     loading_stack_count--;
     free(source);
     if (cacheFile) free(cacheFile);
+    free(normPath);
     return INTERPRET_OK;
 }

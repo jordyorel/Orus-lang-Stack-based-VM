@@ -1,6 +1,6 @@
-use std::math
-use std::random
-use std::collections
+use std.math
+use std.random
+use std.collections
 
 struct Box<T> {
     value: T
@@ -16,7 +16,7 @@ fn main() {
         boxes.push(Box<i32>{ value: random.randint(0, 99) })
     }
 
-    // Count frequency of tens using a Map from std::collections
+    // Count frequency of tens using a Map from std.collections
     let freq = collections.map_new<i32, i32>()
     for i in 0..len(boxes) {
         let b = boxes[i]

@@ -38,6 +38,36 @@ static char* cache_path_for(const char* module_path) {
     return buf;
 }
 
+static char* normalize_module_path(const char* path) {
+    size_t len = strlen(path);
+    bool hasSlash = strchr(path, '/') != NULL;
+    bool hasExt = len > 5 && strcmp(path + len - 5, ".orus") == 0;
+
+    if (!hasSlash && strchr(path, '.')) {
+        char buf[256];
+        size_t pos = 0;
+        for (size_t i = 0; i < len && pos < sizeof(buf) - 6; i++) {
+            buf[pos++] = (path[i] == '.') ? '/' : path[i];
+        }
+        if (!hasExt && pos < sizeof(buf) - 5) {
+            memcpy(buf + pos, ".orus", 5);
+            pos += 5;
+        }
+        buf[pos] = '\0';
+        return strdup(buf);
+    }
+
+    if (!hasExt) {
+        char* result = malloc(len + 6);
+        memcpy(result, path, len);
+        memcpy(result + len, ".orus", 5);
+        result[len + 5] = '\0';
+        return result;
+    }
+
+    return strdup(path);
+}
+
 VM vm;
 
 /**
@@ -349,27 +379,28 @@ int findNative(ObjString* name) {
  * @return     Interpretation result code.
  */
 static InterpretResult interpretModule(const char* path) {
-    if (traceImports) fprintf(stderr, "[import] interpreting %s\n", path);
+    char* normPath = normalize_module_path(path);
+    if (traceImports) fprintf(stderr, "[import] interpreting %s\n", normPath);
     for (int i = 0; i < runtimeStackCount; i++) {
-        if (strcmp(runtimeStack[i], path) == 0) {
-            RUNTIME_ERROR("Import cycle detected for module '%s'.", path);
+        if (strcmp(runtimeStack[i], normPath) == 0) {
+            RUNTIME_ERROR("Import cycle detected for module '%s'.", normPath);
             return INTERPRET_RUNTIME_ERROR;
         }
     }
     if (runtimeStackCount < UINT8_MAX)
-        runtimeStack[runtimeStackCount++] = path;
+        runtimeStack[runtimeStackCount++] = normPath;
 
-    Module* cached = get_module(path);
+    Module* cached = get_module(normPath);
     if (cached) {
         if (vm.devMode && !cached->from_embedded && cached->disk_path) {
             struct stat st;
             if (stat(cached->disk_path, &st) == 0 && st.st_mtime != cached->mtime) {
                 char* src = load_module_source(cached->disk_path);
                 if (src) {
-                    ASTNode* ast = parse_module_source(src, path);
+                    ASTNode* ast = parse_module_source(src, normPath);
                     if (ast) {
                         freeChunk(cached->bytecode);
-                        cached->bytecode = compile_module_ast(ast, path);
+                        cached->bytecode = compile_module_ast(ast, normPath);
                         cached->mtime = st.st_mtime;
                         cached->executed = false;
                     }
@@ -379,7 +410,7 @@ static InterpretResult interpretModule(const char* path) {
         }
 
         if (cached->executed) {
-            RUNTIME_ERROR("Module '%s' already executed.", path);
+            RUNTIME_ERROR("Module '%s' already executed.", normPath);
             runtimeStackCount--;
             return INTERPRET_RUNTIME_ERROR;
         }
@@ -402,15 +433,15 @@ static InterpretResult interpretModule(const char* path) {
     char* diskPath = NULL;
     long mtime = 0;
     bool fromEmbedded = false;
-    char* source = load_module_with_fallback(path, &diskPath, &mtime, &fromEmbedded);
+    char* source = load_module_with_fallback(normPath, &diskPath, &mtime, &fromEmbedded);
     if (!source) {
-        RUNTIME_ERROR("Module '%s' not found", path);
+        RUNTIME_ERROR("Module '%s' not found", normPath);
         runtimeStackCount--;
         return INTERPRET_RUNTIME_ERROR;
     }
 
     int startGlobals = vm.variableCount;
-    char* cacheFile = cache_path_for(path);
+    char* cacheFile = cache_path_for(normPath);
     Chunk* chunk = NULL;
     if (cacheFile) {
         long cached_mtime;
@@ -419,7 +450,7 @@ static InterpretResult interpretModule(const char* path) {
     }
     ASTNode* ast = NULL;
     if (!chunk) {
-        ast = parse_module_source(source, path);
+        ast = parse_module_source(source, normPath);
         if (!ast) {
             free(source);
             if (cacheFile) free(cacheFile);
@@ -428,7 +459,7 @@ static InterpretResult interpretModule(const char* path) {
             return INTERPRET_COMPILE_ERROR;
         }
 
-        chunk = compile_module_ast(ast, path);
+        chunk = compile_module_ast(ast, normPath);
         if (!chunk) {
             free(source);
             if (cacheFile) free(cacheFile);
@@ -440,9 +471,9 @@ static InterpretResult interpretModule(const char* path) {
     }
 
     Module mod;
-    mod.module_name = strdup(path);
-    const char* base = strrchr(path, '/');
-    base = base ? base + 1 : path;
+    mod.module_name = strdup(normPath);
+    const char* base = strrchr(normPath, '/');
+    base = base ? base + 1 : normPath;
     size_t len = strlen(base);
     if (len > 5 && strcmp(base + len - 5, ".orus") == 0) len -= 5;
     mod.name = (char*)malloc(len + 1);
@@ -480,6 +511,7 @@ static InterpretResult interpretModule(const char* path) {
     runtimeStackCount--;
     free(source);
     if (cacheFile) free(cacheFile);
+    free(normPath);
     return result;
 }
 
