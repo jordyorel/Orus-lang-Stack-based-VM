@@ -748,24 +748,43 @@ static ASTNode* parseNil(Parser* parser) {
  * Parse an array literal expression `[expr, ...]`.
  */
 static ASTNode* parseArray(Parser* parser) {
-    ASTNode* elements = NULL;
-    ASTNode* last = NULL;
-    int count = 0;
+    // Handle empty array literal "[]"
+    if (check(parser, TOKEN_RIGHT_BRACKET)) {
+        consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array elements.");
+        ASTNode* node = createArrayNode(NULL, 0);
+        node->line = parser->previous.line;
+        return node;
+    }
 
-    if (!check(parser, TOKEN_RIGHT_BRACKET)) {
-        do {
-            ASTNode* value;
-            expression(parser, &value);
-            if (parser->hadError) return NULL;
+    // Parse the first expression inside the brackets
+    ASTNode* first;
+    expression(parser, &first);
+    if (parser->hadError) return NULL;
 
-            if (elements == NULL) {
-                elements = value;
-            } else {
-                last->next = value;
-            }
-            last = value;
-            count++;
-        } while (match(parser, TOKEN_COMMA));
+    // Check for fill syntax: [value; length]
+    if (match(parser, TOKEN_SEMICOLON)) {
+        ASTNode* lengthExpr;
+        expression(parser, &lengthExpr);
+        if (parser->hadError) return NULL;
+
+        consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array fill.");
+        ASTNode* node = createArrayFillNode(first, lengthExpr);
+        node->line = parser->previous.line;
+        return node;
+    }
+
+    // Otherwise treat as an element list starting with the first value
+    ASTNode* elements = first;
+    ASTNode* last = first;
+    int count = 1;
+
+    while (match(parser, TOKEN_COMMA)) {
+        ASTNode* value;
+        expression(parser, &value);
+        if (parser->hadError) return NULL;
+        last->next = value;
+        last = value;
+        count++;
     }
 
     consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array elements.");
