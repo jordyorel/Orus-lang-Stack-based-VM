@@ -1042,11 +1042,6 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     error(compiler, "Could not determine initializer type");
                     return;
                 }
-                if (!declType && initType->kind == TYPE_ARRAY &&
-                    initType->info.array.elementType->kind == TYPE_NIL) {
-                    error(compiler, "Cannot infer array element type.");
-                    return;
-                }
             }
 
             if (declType) {
@@ -3425,6 +3420,14 @@ static void generateCode(Compiler* compiler, ASTNode* node) {
             }
             writeOp(compiler, OP_MAKE_ARRAY);
             writeOp(compiler, count);
+            break;
+        }
+
+        case AST_ARRAY_FILL: {
+            generateCode(compiler, node->data.arrayFill.value);
+            if (compiler->hadError) return;
+            writeOp(compiler, OP_ARRAY_FILL);
+            writeOp(compiler, node->data.arrayFill.lengthValue);
             break;
         }
 

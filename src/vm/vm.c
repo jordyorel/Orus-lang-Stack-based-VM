@@ -1757,6 +1757,16 @@ static InterpretResult run() {
                 vmPush(&vm, arrayVal);
                 break;
             }
+            case OP_ARRAY_FILL: {
+                uint8_t count = READ_BYTE();
+                Value fill = vmPop(&vm);
+                ObjArray* arr = allocateArray(count);
+                for (int i = 0; i < count; i++) {
+                    arr->elements[i] = fill;
+                }
+                vmPush(&vm, ARRAY_VAL(arr));
+                break;
+            }
             case OP_LEN: {
                 Value val = vmPop(&vm);
                 if (IS_ARRAY(val)) {
