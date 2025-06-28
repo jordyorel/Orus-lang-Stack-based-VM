@@ -1,4 +1,5 @@
-use tests.modules.hello_module::{unknown}
+use tests.modules.hello_module
 
 fn main() {
+    hello_module.unknown()
 }

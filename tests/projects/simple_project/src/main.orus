@@ -1,5 +1,5 @@
-use src.helper::{greet}
+use src.helper
 
 fn main() {
-    greet()
+    helper.greet()
 }
