@@ -1042,6 +1042,11 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     error(compiler, "Could not determine initializer type");
                     return;
                 }
+                if (!declType && initType->kind == TYPE_ARRAY &&
+                    initType->info.array.elementType->kind == TYPE_NIL) {
+                    error(compiler, "Cannot infer array element type.");
+                    return;
+                }
             }
 
             if (declType) {
@@ -2153,6 +2158,29 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
             } else {
                 node->valueType = createArrayType(elementType);
             }
+            break;
+        }
+
+        case AST_ARRAY_FILL: {
+            typeCheckNode(compiler, node->data.arrayFill.value);
+            if (compiler->hadError) return;
+            typeCheckNode(compiler, node->data.arrayFill.length);
+            if (compiler->hadError) return;
+
+            int64_t len;
+            if (!evaluateConstantInt(compiler, node->data.arrayFill.length, &len)) {
+                error(compiler, "Array fill length must be a compile-time constant.");
+                return;
+            }
+            node->data.arrayFill.lengthValue = (int)len;
+
+            if (!node->data.arrayFill.value->valueType ||
+                node->data.arrayFill.value->valueType->kind == TYPE_NIL) {
+                error(compiler, "Cannot infer array element type.");
+                return;
+            }
+
+            node->valueType = createArrayType(node->data.arrayFill.value->valueType);
             break;
         }
 

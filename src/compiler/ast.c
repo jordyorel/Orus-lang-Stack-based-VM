@@ -453,6 +453,7 @@ ASTNode* createArrayFillNode(ASTNode* value, ASTNode* length) {
     node->next = NULL;
     node->data.arrayFill.value = value;
     node->data.arrayFill.length = length;
+    node->data.arrayFill.lengthValue = -1;
     node->valueType = NULL;
     return node;
 }
