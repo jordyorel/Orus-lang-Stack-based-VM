@@ -1,0 +1,4 @@
+fn main() {
+    let arr = [0; 30]
+    print(len(arr))
+}

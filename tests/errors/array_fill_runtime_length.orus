@@ -1,0 +1,5 @@
+fn main() {
+    let n: i32 = 4
+    let arr = [0; n]
+    print(len(arr))
+}

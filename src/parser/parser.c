@@ -2102,12 +2102,9 @@ static Type* parseType(Parser* parser) {
         if (parser->hadError) return NULL;
         int length = -1;
         if (match(parser, TOKEN_SEMICOLON)) {
-            Token numTok = parser->current;
-            consume(parser, TOKEN_NUMBER, "Expect array size.");
-            char buf[numTok.length + 1];
-            memcpy(buf, numTok.start, numTok.length);
-            buf[numTok.length] = '\0';
-            length = (int)strtol(buf, NULL, 10);
+            ASTNode* dummy = NULL;
+            expression(parser, &dummy);
+            if (parser->hadError) return NULL;
         }
         consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array type.");
         if (length >= 0) {

@@ -16,6 +16,7 @@ typedef struct {
     bool isMutable;
     bool isConst;
     bool isModule;           // True if this symbol represents a module alias
+    bool fixedArray;         // True if variable is a fixed-size array
     Module* module;          // Module associated with the alias
     Token token;
 } Symbol;

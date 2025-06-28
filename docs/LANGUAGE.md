@@ -200,6 +200,30 @@ push(values, 20)
 print(len(values))  // 2
 ```
 
+### Array Fill Expressions
+
+Use `[value; N]` to create an array filled with the same value. The length `N`
+must be known at compile time.
+
+```orus
+let zeros = [0; 30]       // [i32; 30]
+const N = 4
+let fixed: [i32; N] = [0; N]
+
+fn make(n: i32) {
+    let bad = [0; n]  // compile-time error
+}
+```
+
+### Length Inference
+
+When the length annotation is omitted, the compiler infers it from the number of
+elements. These arrays are fixed-size and do not support `push` or `pop`.
+
+```orus
+let nums = [1, 2, 3]  // type is [i32; 3]
+```
+
 ### Slicing
 
 Subarrays are created with `[start..end]` (end exclusive). The start or end may
