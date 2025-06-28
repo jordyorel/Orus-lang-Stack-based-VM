@@ -2101,7 +2101,9 @@ static Type* parseType(Parser* parser) {
         Type* elementType = parseType(parser);
         if (parser->hadError) return NULL;
         if (match(parser, TOKEN_SEMICOLON)) {
-            consume(parser, TOKEN_NUMBER, "Expect array size.");
+            ASTNode* dummy = NULL;
+            expression(parser, &dummy);
+            if (parser->hadError) return NULL;
         }
         consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array type.");
         type = createArrayType(elementType);

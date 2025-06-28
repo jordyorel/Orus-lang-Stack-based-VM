@@ -1088,6 +1088,23 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
             uint8_t index = addLocal(compiler, node->data.let.name, node->valueType, node->data.let.isMutable, false);
             node->data.let.index = index;
             vm.publicGlobals[index] = node->data.let.isPublic;
+            {
+                char nameBuf[node->data.let.name.length + 1];
+                memcpy(nameBuf, node->data.let.name.start, node->data.let.name.length);
+                nameBuf[node->data.let.name.length] = '\0';
+                Symbol* sym = findSymbol(&compiler->symbols, nameBuf);
+                if (sym) {
+                    bool fixed = false;
+                    if (node->data.let.initializer) {
+                        ASTNode* init = node->data.let.initializer;
+                        if (init->type == AST_ARRAY && node->data.let.type == NULL && init->data.array.elementCount > 0)
+                            fixed = true;
+                        else if (init->type == AST_ARRAY_FILL && init->data.arrayFill.lengthValue >= 0)
+                            fixed = true;
+                    }
+                    sym->fixedArray = fixed;
+                }
+            }
             break;
         }
 
@@ -1150,6 +1167,23 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
 
             uint8_t index = addLocal(compiler, node->data.staticVar.name, node->valueType, node->data.staticVar.isMutable, false);
             node->data.staticVar.index = index;
+            {
+                char nameBuf[node->data.staticVar.name.length + 1];
+                memcpy(nameBuf, node->data.staticVar.name.start, node->data.staticVar.name.length);
+                nameBuf[node->data.staticVar.name.length] = '\0';
+                Symbol* sym = findSymbol(&compiler->symbols, nameBuf);
+                if (sym) {
+                    bool fixed = false;
+                    if (node->data.staticVar.initializer) {
+                        ASTNode* init = node->data.staticVar.initializer;
+                        if (init->type == AST_ARRAY && node->data.staticVar.type == NULL && init->data.array.elementCount > 0)
+                            fixed = true;
+                        else if (init->type == AST_ARRAY_FILL && init->data.arrayFill.lengthValue >= 0)
+                            fixed = true;
+                    }
+                    sym->fixedArray = fixed;
+                }
+            }
             break;
         }
 
@@ -1817,6 +1851,16 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, val);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->type == AST_VARIABLE) {
+                        char buf[arr->data.variable.name.length + 1];
+                        memcpy(buf, arr->data.variable.name.start, arr->data.variable.name.length);
+                        buf[arr->data.variable.name.length] = '\0';
+                        Symbol* sym = findSymbol(&compiler->symbols, buf);
+                        if (sym && sym->fixedArray) {
+                            error(compiler, "push() cannot modify fixed-size array.");
+                            return;
+                        }
+                    }
                     Type* elemType = arr->valueType->info.array.elementType;
                     if (elemType->kind == TYPE_NIL) {
                         arr->valueType = createArrayType(val->valueType);
@@ -1845,6 +1889,16 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, arr);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->type == AST_VARIABLE) {
+                        char buf[arr->data.variable.name.length + 1];
+                        memcpy(buf, arr->data.variable.name.start, arr->data.variable.name.length);
+                        buf[arr->data.variable.name.length] = '\0';
+                        Symbol* sym = findSymbol(&compiler->symbols, buf);
+                        if (sym && sym->fixedArray) {
+                            error(compiler, "pop() cannot modify fixed-size array.");
+                            return;
+                        }
+                    }
                     node->valueType = arr->valueType->info.array.elementType;
                     node->data.call.builtinOp = OP_ARRAY_POP;
                     break;
@@ -1862,6 +1916,16 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, cap);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->type == AST_VARIABLE) {
+                        char buf[arr->data.variable.name.length + 1];
+                        memcpy(buf, arr->data.variable.name.start, arr->data.variable.name.length);
+                        buf[arr->data.variable.name.length] = '\0';
+                        Symbol* sym = findSymbol(&compiler->symbols, buf);
+                        if (sym && sym->fixedArray) {
+                            error(compiler, "reserve() cannot modify fixed-size array.");
+                            return;
+                        }
+                    }
                     if (cap->valueType &&
                         (cap->valueType->kind == TYPE_I32 || cap->valueType->kind == TYPE_I64 ||
                          cap->valueType->kind == TYPE_U32 || cap->valueType->kind == TYPE_U64)) {
@@ -4162,6 +4226,8 @@ uint8_t addLocal(Compiler* compiler, Token name, Type* type, bool isMutable, boo
 
     addSymbol(&compiler->symbols, nameObj->chars, name, type,
               compiler->scopeDepth, index, isMutable, isConst, false, NULL);
+    Symbol* sym = findSymbol(&compiler->symbols, nameObj->chars);
+    if (sym) sym->fixedArray = false;
 
     return index;
 }

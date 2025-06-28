@@ -69,6 +69,7 @@ bool addSymbol(SymbolTable* table, const char* name, Token token, Type* type,
     table->symbols[table->count].isMutable = isMutable;
     table->symbols[table->count].isConst = isConst;
     table->symbols[table->count].isModule = isModule;
+    table->symbols[table->count].fixedArray = false;
     table->symbols[table->count].module = module;
     table->symbols[table->count].token = token;
     table->count++;

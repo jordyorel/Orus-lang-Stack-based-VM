@@ -2,7 +2,7 @@
 
 This document outlines the steps to add more ergonomic array declarations in Orus. The goal is to support Rust-style fill expressions, length inference from initializer values, and const-safe fills.
 
-**Status:** Phases 1–5 implemented in the interpreter (AST support, parsing, constant evaluation, type checking and code generation). Remaining phases are still in progress.
+**Status:** Phases 1–8 implemented in the interpreter (AST support, parsing, constant evaluation, type checking, code generation, runtime semantics, tests and documentation).
 
 ## 1. Extend the AST ✅ Done
 - Introduce an `AST_ARRAY_FILL` node in `include/ast.h` and `src/compiler/ast.c`.
@@ -33,14 +33,14 @@ This document outlines the steps to add more ergonomic array declarations in Oru
 - Disallow `push` or `pop` on these arrays at compile time.
 - Dynamic arrays remain supported when explicitly declared.
 
-## 7. Tests
+## 7. Tests ✅ Done
 - Add unit tests under `tests/` to verify:
   - `[0; 30]` yields `[i32; 30]`.
   - `const N = 4; let a: [i32; N] = [0; N]` succeeds.
   - `[0; n]` where `n` is a runtime variable fails.
   - `[1, 2, 3]` without a length annotation creates `[i32; 3]` and rejects `push`.
 
-## 8. Documentation Updates
+## 8. Documentation Updates ✅ Done
 - Extend `docs/LANGUAGE.md` with examples of the new array syntax.
 - Document the compile-time constant requirement for fill lengths.
 
