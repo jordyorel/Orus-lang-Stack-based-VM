@@ -1,4 +1,4 @@
-use std::math
+use std.math
 
 fn main() {
     print(math.abs(-5.0))

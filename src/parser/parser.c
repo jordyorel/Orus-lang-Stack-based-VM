@@ -1356,7 +1356,7 @@ static void importStatement(Parser* parser, ASTNode** ast) {
 
     // Emit an error recommending the new `use` statement syntax
     errorAt(parser, &parser->previous,
-            "`import` statements are deprecated; use `use module::path` instead");
+            "`import` statements are deprecated; use `use module.path` instead");
 
     consumeStatementEnd(parser);
     *ast = createImportNode(path);
@@ -1376,9 +1376,9 @@ static void useStatement(Parser* parser, ASTNode** ast) {
     parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
     parts[partCount++] = allocateString(nameTok.start, nameTok.length);
 
-    while (check(parser, TOKEN_DOUBLE_COLON) && checkNext(TOKEN_IDENTIFIER)) {
-        advance(parser); // consume '::'
-        consume(parser, TOKEN_IDENTIFIER, "Expect identifier after '::'.");
+    while (check(parser, TOKEN_DOT) && checkNext(TOKEN_IDENTIFIER)) {
+        advance(parser); // consume '.'
+        consume(parser, TOKEN_IDENTIFIER, "Expect identifier after '.'.");
         Token t = parser->previous;
         parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
         parts[partCount++] = allocateString(t.start, t.length);
@@ -1392,10 +1392,6 @@ static void useStatement(Parser* parser, ASTNode** ast) {
     if (match(parser, TOKEN_AS)) {
         consume(parser, TOKEN_IDENTIFIER, "Expect alias after 'as'.");
         alias = allocateString(parser->previous.start, parser->previous.length);
-    } else if (match(parser, TOKEN_DOUBLE_COLON)) {
-        error(parser, "Only whole modules may be imported.");
-        // Consume the rest of the line for error recovery
-        while (!check(parser, TOKEN_NEWLINE) && !check(parser, TOKEN_EOF)) advance(parser);
     }
 
     // Build path string
@@ -1948,7 +1944,7 @@ ParseRule rules[] = {
     [TOKEN_MATCH] = {NULL, NULL, PREC_NONE},
     [TOKEN_USE] = {NULL, NULL, PREC_NONE},
     [TOKEN_AS] = {NULL, parseCast, PREC_COMPARISON},
-    [TOKEN_DOUBLE_COLON] = {NULL, NULL, PREC_NONE},
+    [TOKEN_COLON] = {NULL, NULL, PREC_NONE},
 };
 
 /**
