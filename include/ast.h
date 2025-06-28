@@ -111,6 +111,7 @@ typedef struct {
 typedef struct {
     struct ASTNode* value;   // Expression for the fill value
     struct ASTNode* length;  // Expression for the array length
+    int lengthValue;         // Inferred constant length or -1 if not constant
 } ArrayFillData;
 
 typedef struct {
