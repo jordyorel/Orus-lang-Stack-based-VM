@@ -236,6 +236,15 @@ static bool checkNext(TokenType type) {
     return next.type == type;
 }
 
+// Peek two tokens ahead without consuming them.
+static bool checkNextTwo(TokenType first, TokenType second) {
+    Scanner backup = scanner;
+    Token t1 = scan_token();
+    Token t2 = scan_token();
+    scanner = backup;
+    return t1.type == first && t2.type == second;
+}
+
 /**
  * Parse a string literal into an AST node.
  *
@@ -1376,9 +1385,26 @@ static void useStatement(Parser* parser, ASTNode** ast) {
     parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
     parts[partCount++] = allocateString(nameTok.start, nameTok.length);
 
-    while (check(parser, TOKEN_DOT) && checkNext(TOKEN_IDENTIFIER)) {
-        advance(parser); // consume '.'
-        consume(parser, TOKEN_IDENTIFIER, "Expect identifier after '.'.");
+    while ((check(parser, TOKEN_DOT) && checkNext(TOKEN_IDENTIFIER)) ||
+           (check(parser, TOKEN_COLON) &&
+            checkNextTwo(TOKEN_COLON, TOKEN_IDENTIFIER))) {
+        if (check(parser, TOKEN_DOT)) {
+            advance(parser); // consume '.'
+        } else {
+            // Consume deprecated '::' separator
+            Token colonTok = parser->current;
+            advance(parser); // first ':'
+            advance(parser); // second ':'
+            if (!parser->doubleColonWarned) {
+                fprintf(stderr,
+                        "Warning: '::' is deprecated; use '.' for module paths (at %s:%d)\n",
+                        parser->filePath ? parser->filePath : "<source>",
+                        colonTok.line);
+                parser->doubleColonWarned = true;
+            }
+        }
+
+        consume(parser, TOKEN_IDENTIFIER, "Expect identifier after module path separator.");
         Token t = parser->previous;
         parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
         parts[partCount++] = allocateString(t.start, t.length);
@@ -1970,6 +1996,7 @@ void initParser(Parser* parser, Scanner* scanner, const char* filePath) {
     parser->filePath = filePath;
     parser->parenDepth = 0;
     parser->inMatchCase = false;
+    parser->doubleColonWarned = false;
 }
 
 /**

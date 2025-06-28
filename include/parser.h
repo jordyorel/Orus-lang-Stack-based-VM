@@ -38,6 +38,7 @@ typedef struct {
     const char* filePath;
     int parenDepth;
     bool inMatchCase;
+    bool doubleColonWarned;
 } Parser;
 
 typedef ASTNode* (*ParseFn)(Parser*);
