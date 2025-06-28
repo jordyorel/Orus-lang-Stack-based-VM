@@ -1058,12 +1058,36 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                             while (el) {
                                 convertLiteralForDecl(el, el->valueType,
                                                      declType->info.array.elementType);
-                                if (!typesEqual(el->valueType,
-                                                declType->info.array.elementType)) {
+                                if (declType->info.array.elementType->kind == TYPE_ARRAY &&
+                                    declType->info.array.elementType->info.array.length < 0 &&
+                                    el->valueType && el->valueType->kind == TYPE_ARRAY &&
+                                    typesEqual(el->valueType->info.array.elementType,
+                                               declType->info.array.elementType->info.array.elementType)) {
+                                    el->valueType = declType->info.array.elementType;
+                                } else if (!typesEqual(el->valueType,
+                                                     declType->info.array.elementType)) {
                                     error(compiler, "Type mismatch in let declaration.");
                                     return;
                                 }
                                 el = el->next;
+                            }
+                            node->data.let.initializer->valueType = declType;
+                            initType = declType;
+                        } else if (node->data.let.initializer->type == AST_ARRAY_FILL &&
+                                   declType->kind == TYPE_ARRAY) {
+                            ASTNode* val = node->data.let.initializer->data.arrayFill.value;
+                            convertLiteralForDecl(val, val->valueType,
+                                                 declType->info.array.elementType);
+                            if (declType->info.array.elementType->kind == TYPE_ARRAY &&
+                                declType->info.array.elementType->info.array.length < 0 &&
+                                val->valueType && val->valueType->kind == TYPE_ARRAY &&
+                                typesEqual(val->valueType->info.array.elementType,
+                                           declType->info.array.elementType->info.array.elementType)) {
+                                val->valueType = declType->info.array.elementType;
+                            } else if (!typesEqual(val->valueType,
+                                                   declType->info.array.elementType)) {
+                                error(compiler, "Type mismatch in let declaration.");
+                                return;
                             }
                             node->data.let.initializer->valueType = declType;
                             initType = declType;
@@ -1145,6 +1169,24 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                                     return;
                                 }
                                 el = el->next;
+                            }
+                            node->data.staticVar.initializer->valueType = declType;
+                            initType = declType;
+                        } else if (node->data.staticVar.initializer->type == AST_ARRAY_FILL &&
+                                   declType->kind == TYPE_ARRAY) {
+                            ASTNode* val = node->data.staticVar.initializer->data.arrayFill.value;
+                            convertLiteralForDecl(val, val->valueType,
+                                                 declType->info.array.elementType);
+                            if (declType->info.array.elementType->kind == TYPE_ARRAY &&
+                                declType->info.array.elementType->info.array.length < 0 &&
+                                val->valueType && val->valueType->kind == TYPE_ARRAY &&
+                                typesEqual(val->valueType->info.array.elementType,
+                                           declType->info.array.elementType->info.array.elementType)) {
+                                val->valueType = declType->info.array.elementType;
+                            } else if (!typesEqual(val->valueType,
+                                                   declType->info.array.elementType)) {
+                                error(compiler, "Type mismatch in static declaration.");
+                                return;
                             }
                             node->data.staticVar.initializer->valueType = declType;
                             initType = declType;
@@ -2292,6 +2334,20 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     value->valueType->info.array.elementType->kind == TYPE_NIL &&
                     expected->kind == TYPE_ARRAY) {
                     value->valueType = expected;
+                }
+                if (expected->kind == TYPE_ARRAY && expected->info.array.length < 0 &&
+                    value->valueType && value->valueType->kind == TYPE_ARRAY &&
+                    typesEqual(expected->info.array.elementType,
+                               value->valueType->info.array.elementType)) {
+                    value->valueType = expected;
+                } else if (expected->kind == TYPE_ARRAY && value->type == AST_ARRAY_FILL &&
+                           value->valueType && value->valueType->kind == TYPE_ARRAY) {
+                    ASTNode* val = value->data.arrayFill.value;
+                    convertLiteralForDecl(val, val->valueType,
+                                         expected->info.array.elementType);
+                    if (typesEqual(val->valueType, expected->info.array.elementType)) {
+                        value->valueType = expected;
+                    }
                 }
                 if (!typesEqual(expected, value->valueType)) {
                     if (expected->kind == TYPE_U32 && value->type == AST_LITERAL &&
