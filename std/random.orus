@@ -84,7 +84,7 @@ pub fn shuffle<T>(arr: [T]) {
 
 // Return k unique elements sampled from the array
 pub fn sample<T>(arr: [T], k: i32) -> [T] {
-    let copy: [T; 0] = arr[..]
+    let copy: [T] = arr[..]
     shuffle(copy)
     return copy[0..k]
 }

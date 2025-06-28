@@ -71,6 +71,15 @@ Type* createArrayType(Type* elementType) {
     Type* type = allocateType();
     type->kind = TYPE_ARRAY;
     type->info.array.elementType = elementType;
+    type->info.array.length = -1;
+    return type;
+}
+
+Type* createSizedArrayType(Type* elementType, int length) {
+    Type* type = allocateType();
+    type->kind = TYPE_ARRAY;
+    type->info.array.elementType = elementType;
+    type->info.array.length = length;
     return type;
 }
 
@@ -154,6 +163,7 @@ bool typesEqual(Type* a, Type* b) {
             return true;  // Same kind means same type for primitives
             
         case TYPE_ARRAY:
+            if (a->info.array.length != b->info.array.length) return false;
             return typesEqual(a->info.array.elementType,
                             b->info.array.elementType);
             
@@ -231,6 +241,9 @@ Type* substituteGenerics(Type* type, ObjString** names, Type** subs, int count) 
             Type* elem = substituteGenerics(type->info.array.elementType,
                                            names, subs, count);
             if (elem == type->info.array.elementType) return type;
+            if (type->info.array.length >= 0) {
+                return createSizedArrayType(elem, type->info.array.length);
+            }
             return createArrayType(elem);
         }
         case TYPE_FUNCTION: {

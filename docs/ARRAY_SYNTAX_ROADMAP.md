@@ -28,9 +28,9 @@ This document outlines the steps to add more ergonomic array declarations in Oru
 - Introduce a VM opcode such as `OP_ARRAY_FILL` or emit repeated element pushes.
 - Ensure the generated array is fixed-size when length is inferred at compile time.
 
-## 6. Runtime Semantics
+## 6. Runtime Semantics ✅ Done
 - Arrays produced via fill syntax or length inference behave as fixed-size arrays.
-- Disallow `push` or `pop` on these arrays at compile time.
+- `push`, `pop` and `reserve` emit compile errors when used on these arrays.
 - Dynamic arrays remain supported when explicitly declared.
 
 ## 7. Tests ✅ Done

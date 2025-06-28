@@ -1,12 +1,12 @@
 struct FloatVector {
-    data: [f64; 8],
+    data: [f64],
     length: i32
 }
 
 impl FloatVector {
     fn new() -> FloatVector {
         return FloatVector{
-            data: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            data: [],
             length: 0 as i32
         }
     }

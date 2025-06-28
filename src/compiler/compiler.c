@@ -1863,7 +1863,13 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                     }
                     Type* elemType = arr->valueType->info.array.elementType;
                     if (elemType->kind == TYPE_NIL) {
-                        arr->valueType = createArrayType(val->valueType);
+                        if (arr->valueType->info.array.length >= 0) {
+                            arr->valueType = createSizedArrayType(
+                                val->valueType,
+                                arr->valueType->info.array.length);
+                        } else {
+                            arr->valueType = createArrayType(val->valueType);
+                        }
                         elemType = val->valueType;
                         if (arr->type == AST_VARIABLE) {
                             variableTypes[arr->data.variable.index] = arr->valueType;
@@ -2213,9 +2219,19 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 elem = elem->next;
             }
             if (!elementType) {
-                node->valueType = createArrayType(getPrimitiveType(TYPE_NIL));
+                if (node->data.array.elementCount == 0) {
+                    node->valueType = createArrayType(getPrimitiveType(TYPE_NIL));
+                } else {
+                    node->valueType = createSizedArrayType(
+                        getPrimitiveType(TYPE_NIL), node->data.array.elementCount);
+                }
             } else {
-                node->valueType = createArrayType(elementType);
+                if (node->data.array.elementCount == 0) {
+                    node->valueType = createArrayType(elementType);
+                } else {
+                    node->valueType = createSizedArrayType(
+                        elementType, node->data.array.elementCount);
+                }
             }
             break;
         }
@@ -2239,7 +2255,9 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 return;
             }
 
-            node->valueType = createArrayType(node->data.arrayFill.value->valueType);
+            node->valueType = createSizedArrayType(
+                node->data.arrayFill.value->valueType,
+                node->data.arrayFill.lengthValue);
             break;
         }
 

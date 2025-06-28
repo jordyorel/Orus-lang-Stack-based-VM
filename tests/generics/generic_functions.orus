@@ -69,15 +69,15 @@ fn main() {
     print("Identity of 'Hello': {}", str)
     
     // Test firstElement function
-    let numbers = [10, 20, 30, 40]
+    let numbers: [i32] = [10, 20, 30, 40]
     print("First number: {}", firstElement(numbers))
     
-    let names = ["Alice", "Bob", "Charlie"]
+    let names: [string] = ["Alice", "Bob", "Charlie"]
     print("First name: {}", firstElement(names))
     
     // Test zip function
     let ids: [i32] = [1, 2, 3, 4]
-    let users = ["user1", "user2", "user3"]
+    let users: [string] = ["user1", "user2", "user3"]
     let zipped = zip(ids, users)
     
     print("Zipped results:")

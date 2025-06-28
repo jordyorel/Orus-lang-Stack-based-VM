@@ -6,7 +6,7 @@ fn main() {
     print(arr[2 as i32])
 
     // Dynamic array operations
-    let dyn: [i32; 1] = [5]
+    let dyn: [i32] = [5]
     push(dyn, 6 as i32)
     print(dyn[1 as i32])
     pop(dyn)

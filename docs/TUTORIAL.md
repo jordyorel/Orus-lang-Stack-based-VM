@@ -1319,7 +1319,7 @@ fn main() {
     let values: [f64] = [3.5, 2.0, 4.1]
     print(max(values))
 
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = []
     reserve(arr, 3)
     push(arr, 10)
     push(arr, -3)
@@ -1344,7 +1344,7 @@ fn main() {
     let values: [f64] = [3.5, 2.0, 4.1]
     print(min(values))
 
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = []
     push(arr, 10)
     push(arr, -3)
     push(arr, 7)
@@ -1451,7 +1451,7 @@ fn main() {
     let values: [f64] = [1.5, 2.5, 3.0]
     print(sum(values))
 
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = []
     push(arr, 10)
     push(arr, 20)
     push(arr, -5)
@@ -1473,7 +1473,7 @@ fn main() {
     let a: u32 = 4
     print(type_of(a))
     print(type_of("hi"))
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = []
     print(type_of(arr))
 
 }
@@ -2456,7 +2456,7 @@ fn main() {
     print(arr[2])
 
     // Dynamic array operations
-    let dyn: [i32; 1] = [5]
+    let dyn: [i32] = [5]
     push(dyn, 6)
     print(dyn[1])
     pop(dyn)
@@ -2536,7 +2536,7 @@ Grow a dynamic array beyond its initial capacity
 ```orus
 // Grow a dynamic array beyond its initial capacity
 fn main() {
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = [0]
     for i in 1..20 {
         push(arr, i)
     }
@@ -2551,7 +2551,7 @@ Dynamic array stress test with large growth
 ```orus
 // Dynamic array stress test with large growth
 fn main() {
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = [0]
     for i in 1..1000 {
         push(arr, i)
     }
@@ -5001,7 +5001,7 @@ fn main() {
 ### `tests/types/dynamic_array.orus`
 ```orus
 fn main() {
-    let arr: [i32; 1] = [0]
+    let arr: [i32] = []
     pop(arr)
     push(arr, 10)
     push(arr, 20)
@@ -5015,7 +5015,7 @@ fn main() {
 ### `tests/types/dynamic_array_edge.orus`
 ```orus
 fn main() {
-    let arr: [i32; 1] = [1]
+    let arr: [i32] = [1]
     push(arr, 2)
     push(arr, 3)
     print(len(arr))
