@@ -53,7 +53,6 @@ typedef enum {
   TOKEN_NEWLINE,
 
   TOKEN_COLON,      // Add this for type annotations
-  TOKEN_DOUBLE_COLON,
 } TokenType;
 
 typedef struct {

@@ -609,7 +609,6 @@ Token scan_token() {
             return make_token(TOKEN_BIT_XOR);
         case '"': return string();
         case ':':
-            if (match(':')) return make_token(TOKEN_DOUBLE_COLON);
             return make_token(TOKEN_COLON);
     }
 
