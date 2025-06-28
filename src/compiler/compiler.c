@@ -88,22 +88,41 @@ static bool isNumericKind(TypeKind kind) {
 
 // Evaluate an AST node to an integer constant if possible.
 // Returns true on success and stores the value in out.
-static bool evaluateConstantInt(ASTNode* node, int64_t* out) {
-    if (!node || node->type != AST_LITERAL) return false;
-    Value v = node->data.literal;
-    if (IS_I32(v)) { *out = AS_I32(v); return true; }
-    if (IS_I64(v)) { *out = AS_I64(v); return true; }
-    if (IS_U32(v)) { *out = (int64_t)AS_U32(v); return true; }
-    if (IS_U64(v)) { *out = (int64_t)AS_U64(v); return true; }
+static bool evaluateConstantInt(Compiler* compiler, ASTNode* node, int64_t* out) {
+    if (!node) return false;
+
+    if (node->type == AST_LITERAL) {
+        Value v = node->data.literal;
+        if (IS_I32(v)) { *out = AS_I32(v); return true; }
+        if (IS_I64(v)) { *out = AS_I64(v); return true; }
+        if (IS_U32(v)) { *out = (int64_t)AS_U32(v); return true; }
+        if (IS_U64(v)) { *out = (int64_t)AS_U64(v); return true; }
+        return false;
+    }
+
+    if (node->type == AST_VARIABLE) {
+        char name[node->data.variable.name.length + 1];
+        memcpy(name, node->data.variable.name.start, node->data.variable.name.length);
+        name[node->data.variable.name.length] = '\0';
+        Symbol* sym = findSymbol(&compiler->symbols, name);
+        if (!sym || !sym->isConst) return false;
+        Value v = vm.globals[sym->index];
+        if (IS_I32(v)) { *out = AS_I32(v); return true; }
+        if (IS_I64(v)) { *out = AS_I64(v); return true; }
+        if (IS_U32(v)) { *out = (int64_t)AS_U32(v); return true; }
+        if (IS_U64(v)) { *out = (int64_t)AS_U64(v); return true; }
+        return false;
+    }
+
     return false;
 }
 
 // Determine if a binary operation on two constant integer nodes would overflow
 // the 32-bit signed range. Only handles +, -, * operators.
-static bool constantBinaryOverflows(ASTNode* left, ASTNode* right,
+static bool constantBinaryOverflows(Compiler* compiler, ASTNode* left, ASTNode* right,
                                     TokenType op) {
     int64_t a, b, r = 0;
-    if (!evaluateConstantInt(left, &a) || !evaluateConstantInt(right, &b)) {
+    if (!evaluateConstantInt(compiler, left, &a) || !evaluateConstantInt(compiler, right, &b)) {
         return false;
     }
 
@@ -771,7 +790,7 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
             if (node->valueType && node->valueType->kind == TYPE_I32 &&
                 (operator == TOKEN_PLUS || operator == TOKEN_MINUS ||
                  operator == TOKEN_STAR) &&
-                constantBinaryOverflows(node->left, node->right, operator)) {
+                constantBinaryOverflows(compiler, node->left, node->right, operator)) {
                 node->valueType = getPrimitiveType(TYPE_I64);
                 node->data.operation.convertLeft = leftType->kind != TYPE_I64;
                 node->data.operation.convertRight = rightType->kind != TYPE_I64;
@@ -1492,10 +1511,10 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
 
             // Analyse constant loop bounds for potential overflow
             int64_t startVal, endVal, stepVal = 1;
-            bool startConst = evaluateConstantInt(node->data.forStmt.startExpr, &startVal);
-            bool endConst = evaluateConstantInt(node->data.forStmt.endExpr, &endVal);
+            bool startConst = evaluateConstantInt(compiler, node->data.forStmt.startExpr, &startVal);
+            bool endConst = evaluateConstantInt(compiler, node->data.forStmt.endExpr, &endVal);
             bool stepConst = node->data.forStmt.stepExpr ?
-                                evaluateConstantInt(node->data.forStmt.stepExpr, &stepVal) : true;
+                                evaluateConstantInt(compiler, node->data.forStmt.stepExpr, &stepVal) : true;
             bool promoteIter = false;
             if ((startConst && (startVal > INT32_MAX || startVal < INT32_MIN)) ||
                 (endConst && (endVal > INT32_MAX || endVal < INT32_MIN))) {
