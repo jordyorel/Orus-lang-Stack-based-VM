@@ -15,6 +15,7 @@ typedef enum {
     AST_ASSIGNMENT,
     AST_CALL,
     AST_ARRAY,
+    AST_ARRAY_FILL,
     AST_ARRAY_SET,
     AST_SLICE,
     AST_STRUCT_LITERAL,
@@ -106,6 +107,11 @@ typedef struct {
     struct ASTNode* elements;   // Linked list of element expressions
     int elementCount;
 } ArrayData;
+
+typedef struct {
+    struct ASTNode* value;   // Expression for the fill value
+    struct ASTNode* length;  // Expression for the array length
+} ArrayFillData;
 
 typedef struct {
     ObjString* path;
@@ -203,6 +209,7 @@ typedef struct ASTNode {
         WhileData whileStmt;
         ForData forStmt;
         ArrayData array;
+        ArrayFillData arrayFill;
         StructLiteralData structLiteral;
         FieldAccessData field;
         struct {
@@ -248,6 +255,7 @@ ASTNode* createCallNode(Token name, ASTNode* arguments, int argCount, Type* stat
 ASTNode* createTryNode(ASTNode* tryBlock, Token errorName, ASTNode* catchBlock);
 ASTNode* createReturnNode(ASTNode* value);
 ASTNode* createArrayNode(ASTNode* elements, int elementCount);
+ASTNode* createArrayFillNode(ASTNode* value, ASTNode* length);
 ASTNode* createArraySetNode(ASTNode* array, ASTNode* index, ASTNode* value);
 ASTNode* createSliceNode(ASTNode* array, ASTNode* start, ASTNode* end);
 ASTNode* createStructLiteralNode(Token name, ASTNode* values, int fieldCount,

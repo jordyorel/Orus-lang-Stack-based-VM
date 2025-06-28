@@ -439,6 +439,25 @@ ASTNode* createArrayNode(ASTNode* elements, int elementCount) {
 }
 
 /**
+ * Create an array fill expression node.
+ *
+ * @param value  Expression producing the element value.
+ * @param length Expression for the number of elements.
+ * @return Newly allocated AST node.
+ */
+ASTNode* createArrayFillNode(ASTNode* value, ASTNode* length) {
+    ASTNode* node = allocateASTNode();
+    node->type = AST_ARRAY_FILL;
+    node->left = NULL;
+    node->right = NULL;
+    node->next = NULL;
+    node->data.arrayFill.value = value;
+    node->data.arrayFill.length = length;
+    node->valueType = NULL;
+    return node;
+}
+
+/**
  * Create an array element assignment node.
  *
  * @param array Array expression being modified.
