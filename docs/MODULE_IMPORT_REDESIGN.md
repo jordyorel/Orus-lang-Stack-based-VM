@@ -8,7 +8,7 @@ use tests.modules.hello_module
 
 The goal is to remove the `::` separator entirely and replace it with `.` for module paths.
 
-**Status:** Phase 3 (Standard library and documentation updates) has been implemented. Migration cleanup is next.
+**Status:** Phase 4 (compatibility warnings in parser) implemented. Migration cleanup is next.
 
 ## 1. Lexer and Parser
 
@@ -41,8 +41,8 @@ The goal is to remove the `::` separator entirely and replace it with `.` for mo
 
 ## 4. Migration Strategy
 
-1. Provide a temporary compatibility warning when the parser encounters `::` to guide users toward the new syntax.
-2. After a deprecation period, remove support for `::` entirely.
+1. The parser now emits a compatibility warning when it encounters `::` to guide users toward the new `.` syntax.
+2. After a deprecation period, support for `::` will be removed entirely.
 
 ## 5. Testing
 
