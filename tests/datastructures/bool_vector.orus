@@ -1,7 +1,7 @@
 // Test: Vector of booleans in Orus
 
 fn main() {
-    let vb: [bool; 5] = [true]
+    let vb: [bool] = [true]
     vb.push(true)
     vb.push(false)
     vb.push(true)

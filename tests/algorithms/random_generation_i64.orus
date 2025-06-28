@@ -55,11 +55,11 @@ fn main() {
     // The choice and shuffle functions demonstrate RNG usage with arrays.
     // Example usage of choice and shuffle
     // (Uncomment the following lines if array indexing with casted indices is supported)
-    let names = ["Alice", "Bob", "Cleo"]
+    let names: [string] = ["Alice", "Bob", "Cleo"]
     let selected = rng.choice(names)
     print("Picked: {}", selected)
 
-    let numbers = [1, 2, 3, 4, 5]
+    let numbers: [i32] = [1, 2, 3, 4, 5]
     rng.shuffle(numbers)
     print("Shuffled: {}, {}, {}, {}, {}", numbers[0 as i32], numbers[1 as i32], numbers[2 as i32], numbers[3 as i32], numbers[4 as i32])
 }

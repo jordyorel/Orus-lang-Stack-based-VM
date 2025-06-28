@@ -4,7 +4,7 @@ fn main() {
     //print(sorted(nums, false))
     print(sorted(nums, true))
 
-    let words: [string; 1] = ["b"]
+    let words: [string] = ["b"]
     push(words, "d")
     push(words, "a")
     push(words, "c")
