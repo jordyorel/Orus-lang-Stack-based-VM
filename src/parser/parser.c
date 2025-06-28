@@ -2100,11 +2100,21 @@ static Type* parseType(Parser* parser) {
     } else if (match(parser, TOKEN_LEFT_BRACKET)) {
         Type* elementType = parseType(parser);
         if (parser->hadError) return NULL;
+        int length = -1;
         if (match(parser, TOKEN_SEMICOLON)) {
+            Token numTok = parser->current;
             consume(parser, TOKEN_NUMBER, "Expect array size.");
+            char buf[numTok.length + 1];
+            memcpy(buf, numTok.start, numTok.length);
+            buf[numTok.length] = '\0';
+            length = (int)strtol(buf, NULL, 10);
         }
         consume(parser, TOKEN_RIGHT_BRACKET, "Expect ']' after array type.");
-        type = createArrayType(elementType);
+        if (length >= 0) {
+            type = createSizedArrayType(elementType, length);
+        } else {
+            type = createArrayType(elementType);
+        }
     } else if (match(parser, TOKEN_INT)) {
         type = getPrimitiveType(TYPE_I32);
     } else if (match(parser, TOKEN_I64)) {

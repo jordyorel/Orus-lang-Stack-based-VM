@@ -1817,9 +1817,19 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, val);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->valueType->info.array.length >= 0) {
+                        error(compiler, "Cannot push to fixed-size array.");
+                        return;
+                    }
                     Type* elemType = arr->valueType->info.array.elementType;
                     if (elemType->kind == TYPE_NIL) {
-                        arr->valueType = createArrayType(val->valueType);
+                        if (arr->valueType->info.array.length >= 0) {
+                            arr->valueType = createSizedArrayType(
+                                val->valueType,
+                                arr->valueType->info.array.length);
+                        } else {
+                            arr->valueType = createArrayType(val->valueType);
+                        }
                         elemType = val->valueType;
                         if (arr->type == AST_VARIABLE) {
                             variableTypes[arr->data.variable.index] = arr->valueType;
@@ -1845,6 +1855,10 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, arr);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->valueType->info.array.length >= 0) {
+                        error(compiler, "Cannot pop from fixed-size array.");
+                        return;
+                    }
                     node->valueType = arr->valueType->info.array.elementType;
                     node->data.call.builtinOp = OP_ARRAY_POP;
                     break;
@@ -1862,6 +1876,10 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 typeCheckNode(compiler, cap);
                 if (compiler->hadError) return;
                 if (arr->valueType && arr->valueType->kind == TYPE_ARRAY) {
+                    if (arr->valueType->info.array.length >= 0) {
+                        error(compiler, "Cannot reserve fixed-size array.");
+                        return;
+                    }
                     if (cap->valueType &&
                         (cap->valueType->kind == TYPE_I32 || cap->valueType->kind == TYPE_I64 ||
                          cap->valueType->kind == TYPE_U32 || cap->valueType->kind == TYPE_U64)) {
@@ -2149,9 +2167,19 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 elem = elem->next;
             }
             if (!elementType) {
-                node->valueType = createArrayType(getPrimitiveType(TYPE_NIL));
+                if (node->data.array.elementCount == 0) {
+                    node->valueType = createArrayType(getPrimitiveType(TYPE_NIL));
+                } else {
+                    node->valueType = createSizedArrayType(
+                        getPrimitiveType(TYPE_NIL), node->data.array.elementCount);
+                }
             } else {
-                node->valueType = createArrayType(elementType);
+                if (node->data.array.elementCount == 0) {
+                    node->valueType = createArrayType(elementType);
+                } else {
+                    node->valueType = createSizedArrayType(
+                        elementType, node->data.array.elementCount);
+                }
             }
             break;
         }
@@ -2175,7 +2203,9 @@ static void typeCheckNode(Compiler* compiler, ASTNode* node) {
                 return;
             }
 
-            node->valueType = createArrayType(node->data.arrayFill.value->valueType);
+            node->valueType = createSizedArrayType(
+                node->data.arrayFill.value->valueType,
+                node->data.arrayFill.lengthValue);
             break;
         }
 

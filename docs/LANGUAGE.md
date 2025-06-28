@@ -194,8 +194,9 @@ nums[1] = 20
 Built-in functions can grow arrays dynamically.
 
 ```orus
-let values: [i32; 1] = [0]
+let values: [i32] = []
 push(values, 10)
+push(values, 20)
 print(len(values))  // 2
 ```
 
@@ -497,7 +498,7 @@ Common utilities are always available. See `docs/BUILTINS.md` for full details.
 - `sorted(array, key=nil, reverse)`
 
 ```orus
-let arr: [i32; 1] = [1]
+let arr: [i32] = [1]
 reserve(arr, 10) // preallocate capacity
 push(arr, 2)
 print(len(arr))

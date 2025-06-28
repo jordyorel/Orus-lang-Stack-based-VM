@@ -12,9 +12,9 @@ fn main() {
     print(math.ceil(3.1))
     print(math.sign(-2.0))
     print(math.sign(-2))
-    let vals = [1.0, 2.0, 3.0]
+    let vals: [f64] = [1.0, 2.0, 3.0]
     print(math.average(vals))
-    let mids = [3.0, 1.0, 2.0]
+    let mids: [f64] = [3.0, 1.0, 2.0]
     print(math.median(mids))
     print(math.mod(-3, 5))
     print(math.PI)

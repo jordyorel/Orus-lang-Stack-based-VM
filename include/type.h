@@ -32,6 +32,7 @@ typedef struct Type {
     union {
         struct {
             struct Type* elementType;
+            int length;            // -1 for dynamic arrays
         } array;
         struct {
             struct Type* returnType;
@@ -53,6 +54,7 @@ typedef struct Type {
 
 Type* createPrimitiveType(TypeKind kind);
 Type* createArrayType(Type* elementType);
+Type* createSizedArrayType(Type* elementType, int length);
 Type* createFunctionType(Type* returnType, Type** paramTypes, int paramCount);
 Type* createStructType(ObjString* name, FieldInfo* fields, int fieldCount,
                        ObjString** generics, int genericCount);
