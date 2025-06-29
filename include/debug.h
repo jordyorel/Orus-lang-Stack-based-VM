@@ -1,5 +1,5 @@
-#ifndef clox_debug_h
-#define clox_debug_h
+#ifndef ORUS_DEBUH
+#define ORUS_DEBUH
 
 #include "chunk.h"
 
