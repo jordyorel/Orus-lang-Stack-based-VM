@@ -4,6 +4,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "../../include/memory.h"
 #include "../../include/vm.h"
@@ -28,6 +29,28 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
     void* result = realloc(pointer, newSize);
     if (result == NULL) exit(1);
+    return result;
+}
+
+void* checkedMalloc(size_t size) {
+    void* ptr = malloc(size);
+    if (!ptr && size > 0) {
+        fprintf(stderr, "Out of memory allocating %zu bytes\n", size);
+        exit(1);
+    }
+    return ptr;
+}
+
+void* checkedRealloc(void* pointer, size_t newSize) {
+    if (newSize == 0) {
+        free(pointer);
+        return NULL;
+    }
+    void* result = realloc(pointer, newSize);
+    if (!result) {
+        fprintf(stderr, "Out of memory reallocating to %zu bytes\n", newSize);
+        exit(1);
+    }
     return result;
 }
 

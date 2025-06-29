@@ -12,6 +12,7 @@
 #include "../include/modules.h"
 #include "../include/builtin_stdlib.h"
 #include "../include/error.h"
+#include "../include/memory.h"
 #include "../include/string_utils.h"
 #include "../include/version.h"
 #include <limits.h>
@@ -267,8 +268,13 @@ static void search_for_main(const char* base, const char* sub, int* count,
             snprintf(relPath, sizeof(relPath), "%s/%s", sub, entry->d_name);
         }
 
-        char fullPath[PATH_MAX];
-        snprintf(fullPath, sizeof(fullPath), "%s/%s", base, relPath);
+        size_t fullLen = strlen(base) + strlen(relPath) + 2;
+        char* fullPath = checkedMalloc(fullLen);
+        if (!fullPath) {
+            closedir(d);
+            return;
+        }
+        snprintf(fullPath, fullLen, "%s/%s", base, relPath);
 
         struct stat st;
         if (stat(fullPath, &st) == 0 && S_ISDIR(st.st_mode)) {
@@ -285,6 +291,7 @@ static void search_for_main(const char* base, const char* sub, int* count,
                 }
             }
         }
+        free(fullPath);
     }
 
     closedir(d);
@@ -307,7 +314,7 @@ static void runProject(const char* dir) {
                 while (*p && *p != '"' && *p != '\n') p++;
                 size_t len = p - start;
                 if (len > 0) {
-                    entryAlloc = malloc(len + 1);
+                    entryAlloc = checkedMalloc(len + 1);
                     memcpy(entryAlloc, start, len);
                     entryAlloc[len] = '\0';
                     entry = entryAlloc;

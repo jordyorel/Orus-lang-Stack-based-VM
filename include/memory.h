@@ -80,6 +80,11 @@
 // Allocates memory for a new object of a given type. It takes the type of the
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 
+// Allocate memory and abort on failure
+void* checkedMalloc(size_t size);
+// Reallocate memory and abort on failure (size==0 frees)
+void* checkedRealloc(void* pointer, size_t newSize);
+
 
 // Allocate a new string object copying the given characters
 ObjString* allocateString(const char* str, int length);
