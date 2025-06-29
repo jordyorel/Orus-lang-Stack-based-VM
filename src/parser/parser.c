@@ -1,6 +1,6 @@
 
 /* parser.c
- * 10× faster, production-ready Orus parser with arena allocator,
+ * 10× faster, production-ready Orus parser with
  * inline helpers, batched skipping, two-token lookahead,
  * and improved error synchronization.
  */
@@ -15,35 +15,6 @@
 
 #include "../../include/common.h"
 #include "../../include/memory.h"
-
-// -----------------------------------------------------------------------------
-// Arena Allocator for AST nodes, strings, diagnostics
-// -----------------------------------------------------------------------------
-typedef struct {
-    char *buffer;
-    size_t capacity, used;
-} Arena;
-
-static Arena arena;
-
-static void arena_init(Arena *a, size_t initial) {
-    a->buffer = malloc(initial);
-    a->capacity = initial;
-    a->used = 0;
-}
-static void *arena_alloc(Arena *a, size_t size) {
-    if (a->used + size > a->capacity) {
-        size_t newCap = (a->capacity * 2) + size;
-        a->buffer = realloc(a->buffer, newCap);
-        a->capacity = newCap;
-    }
-    void *ptr = a->buffer + a->used;
-    a->used += size;
-    return ptr;
-}
-static void arena_reset(Arena *a) {
-    a->used = 0;
-}
 
 // -----------------------------------------------------------------------------
 // Parser initialization (replaces manual struct zeroing)
@@ -137,9 +108,6 @@ static inline void synchronize_(void) {
 // -----------------------------------------------------------------------------
 // Helper to allocate AST nodes
 // -----------------------------------------------------------------------------
-static inline ASTNode *new_node(void) {
-    return arena_alloc(&arena, sizeof(ASTNode));
-}
 
 /**
  * @file parser.c
@@ -187,7 +155,6 @@ static void importStatement(Parser* parser, ASTNode** ast);
 static void useStatement(Parser* parser, ASTNode** ast);
 static void block(Parser* parser, ASTNode** ast);
 static void consumeStatementEnd(Parser* parser);
-static void synchronize(Parser* parser);
 extern ParseRule rules[];
 
 // -----------------------------------------------------------------------------
@@ -241,7 +208,7 @@ static void errorAt(Parser* parser, Token* token, const char* message) {
     const char* lineEnd = lineStart;
     while (*lineEnd != '\n' && *lineEnd != '\0') lineEnd++;
     int lineLength = (int)(lineEnd - lineStart);
-    char* buf = (char*)malloc(lineLength + 1);
+    char* buf = (char*)checkedMalloc(lineLength + 1);
     memcpy(buf, lineStart, lineLength);
     buf[lineLength] = '\0';
     diagnostic.sourceText = buf;
@@ -376,7 +343,7 @@ static ASTNode* parseString(Parser* parser) {
     const char* start = parser->previous.start + 1;  // Skip opening quote
     int length = parser->previous.length - 2;        // Exclude both quotes
 
-    char* buffer = (char*)malloc(length + 1);  // temporary buffer
+    char* buffer = (char*)checkedMalloc(length + 1);  // temporary buffer
     int outLen = 0;
     for (int i = 0; i < length; i++) {
         char c = start[i];
@@ -447,7 +414,7 @@ static ASTNode* parseNumber(Parser* parser) {
 
     int copyLen = length - (suffix_i32 || suffix_i64 || suffix_u32 || suffix_u64 || suffix_f64 ? 3 : (simple_u ? 1 : 0));
 
-    char* numStr = (char*)malloc(copyLen + 1);
+    char* numStr = (char*)checkedMalloc(copyLen + 1);
     int j = 0;
     for (int i = 0; i < copyLen; i++) {
         if (start[i] != '_') {
@@ -738,7 +705,7 @@ static ASTNode* parseDot(Parser* parser, ASTNode* left) {
         do {
             Type* argType = parseType(parser);
             if (parser->hadError) return NULL;
-            genericArgs = realloc(genericArgs, sizeof(Type*) * (genericCount + 1));
+            genericArgs = checkedRealloc(genericArgs, sizeof(Type*) * (genericCount + 1));
             genericArgs[genericCount++] = argType;
         } while (match(parser, TOKEN_COMMA));
         consume(parser, TOKEN_GREATER, "Expect '>' after generic arguments.");
@@ -844,7 +811,7 @@ static ASTNode* parseVariable(Parser* parser) {
         do {
             Type* argType = parseType(parser);
             if (parser->hadError) return NULL;
-            genericArgs = realloc(genericArgs, sizeof(Type*) * (genericCount + 1));
+            genericArgs = checkedRealloc(genericArgs, sizeof(Type*) * (genericCount + 1));
             genericArgs[genericCount++] = argType;
         } while (match(parser, TOKEN_COMMA));
         consume(parser, TOKEN_GREATER, "Expect '>' after generic arguments.");
@@ -984,36 +951,10 @@ static ASTNode* parseStructLiteral(Parser* parser, Token structName,
 /**
  * Determine if a token indicates an expression continues on the next line.
  */
-static bool isContinuationToken(TokenType type) {
-    switch (type) {
-        case TOKEN_AND:
-        case TOKEN_OR:
-        case TOKEN_PLUS:
-        case TOKEN_MINUS:
-        case TOKEN_SLASH:
-        case TOKEN_STAR:
-        case TOKEN_MODULO:
-        case TOKEN_EQUAL_EQUAL:
-        case TOKEN_BANG_EQUAL:
-        case TOKEN_LESS:
-        case TOKEN_LESS_EQUAL:
-        case TOKEN_GREATER:
-        case TOKEN_GREATER_EQUAL:
-        case TOKEN_COMMA:
-        case TOKEN_LEFT_PAREN:
-        case TOKEN_LEFT_BRACKET:
-            return true;
-        default:
-            return false;
-    }
-}
 
 /**
  * Consume newline tokens that are insignificant for parsing.
  */
-static void skipNewlines(Parser* parser) {
-    skipNonCodeTokens();
-}
 
 /**
  * Core Pratt parser routine for handling operator precedence.
@@ -1347,13 +1288,13 @@ static void functionDeclaration(Parser* parser, ASTNode** ast, bool isPublic) {
             }
             if (parser->genericCount >= parser->genericCapacity) {
                 parser->genericCapacity = parser->genericCapacity < 8 ? 8 : parser->genericCapacity * 2;
-                parser->genericParams = realloc(parser->genericParams, sizeof(ObjString*) * parser->genericCapacity);
-                parser->genericConstraints = realloc(parser->genericConstraints, sizeof(GenericConstraint) * parser->genericCapacity);
+                parser->genericParams = checkedRealloc(parser->genericParams, sizeof(ObjString*) * parser->genericCapacity);
+                parser->genericConstraints = checkedRealloc(parser->genericConstraints, sizeof(GenericConstraint) * parser->genericCapacity);
             }
             parser->genericParams[parser->genericCount] = gname;
             parser->genericConstraints[parser->genericCount++] = gc;
-            generics = realloc(generics, sizeof(ObjString*) * (genericCount + 1));
-            constraints = realloc(constraints, sizeof(GenericConstraint) * (genericCount + 1));
+            generics = checkedRealloc(generics, sizeof(ObjString*) * (genericCount + 1));
+            constraints = checkedRealloc(constraints, sizeof(GenericConstraint) * (genericCount + 1));
             generics[genericCount] = gname;
             constraints[genericCount++] = gc;
         } while (match(parser, TOKEN_COMMA));
@@ -1421,7 +1362,7 @@ static void functionDeclaration(Parser* parser, ASTNode** ast, bool isPublic) {
         const char* structName = parser->currentImplType->info.structure.name->chars;
         size_t structLen = strlen(structName);
         size_t funcLen = name.length;
-        char* full = (char*)malloc(structLen + 1 + funcLen + 1);
+        char* full = (char*)checkedMalloc(structLen + 1 + funcLen + 1);
         memcpy(full, structName, structLen);
         full[structLen] = '_';
         memcpy(full + structLen + 1, name.start, funcLen);
@@ -1497,7 +1438,7 @@ static void useStatement(Parser* parser, ASTNode** ast) {
 
     consume(parser, TOKEN_IDENTIFIER, "Expect module path after 'use'.");
     Token nameTok = parser->previous;
-    parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
+    parts = checkedRealloc(parts, sizeof(ObjString*) * (partCount + 1));
     parts[partCount++] = allocateString(nameTok.start, nameTok.length);
 
     while ((check(parser, TOKEN_DOT) && checkNext(TOKEN_IDENTIFIER)) ||
@@ -1521,7 +1462,7 @@ static void useStatement(Parser* parser, ASTNode** ast) {
 
         consume(parser, TOKEN_IDENTIFIER, "Expect identifier after module path separator.");
         Token t = parser->previous;
-        parts = realloc(parts, sizeof(ObjString*) * (partCount + 1));
+        parts = checkedRealloc(parts, sizeof(ObjString*) * (partCount + 1));
         parts[partCount++] = allocateString(t.start, t.length);
     }
 
@@ -1540,7 +1481,7 @@ static void useStatement(Parser* parser, ASTNode** ast) {
     for (int i = 0; i < partCount; i++) total += parts[i]->length + 1;
     const char* ext = ".orus";
     total += 5; // for extension
-    char* buffer = malloc(total + 1);
+    char* buffer = checkedMalloc(total + 1);
     int pos = 0;
     for (int i = 0; i < partCount; i++) {
         memcpy(buffer + pos, parts[i]->chars, parts[i]->length);
@@ -1588,12 +1529,12 @@ static void structDeclaration(Parser* parser, ASTNode** ast, bool isPublic) {
             }
             if (parser->genericCount >= parser->genericCapacity) {
                 parser->genericCapacity = parser->genericCapacity < 8 ? 8 : parser->genericCapacity * 2;
-                parser->genericParams = realloc(parser->genericParams, sizeof(ObjString*) * parser->genericCapacity);
-                parser->genericConstraints = realloc(parser->genericConstraints, sizeof(GenericConstraint) * parser->genericCapacity);
+                parser->genericParams = checkedRealloc(parser->genericParams, sizeof(ObjString*) * parser->genericCapacity);
+                parser->genericConstraints = checkedRealloc(parser->genericConstraints, sizeof(GenericConstraint) * parser->genericCapacity);
             }
             parser->genericParams[parser->genericCount] = gname;
             parser->genericConstraints[parser->genericCount++] = gc;
-            generics = realloc(generics, sizeof(ObjString*) * (genericCount + 1));
+            generics = checkedRealloc(generics, sizeof(ObjString*) * (genericCount + 1));
             generics[genericCount++] = gname;
         } while (match(parser, TOKEN_COMMA));
         consume(parser, TOKEN_GREATER, "Expect '>' after generic parameters.");
@@ -1618,7 +1559,7 @@ static void structDeclaration(Parser* parser, ASTNode** ast, bool isPublic) {
 
         if (count == capacity) {
             capacity = capacity < 4 ? 4 : capacity * 2;
-            fields = realloc(fields, sizeof(FieldInfo) * capacity);
+            fields = checkedRealloc(fields, sizeof(FieldInfo) * capacity);
         }
         ObjString* fname = allocateString(fieldNameTok.start, fieldNameTok.length);
         fields[count].name = fname;
@@ -1682,11 +1623,11 @@ static void implBlock(Parser* parser, ASTNode** ast) {
                 parser->genericCapacity =
                     parser->genericCapacity < 8 ? 8 : parser->genericCapacity * 2;
                 parser->genericParams =
-                    realloc(parser->genericParams,
-                            sizeof(ObjString*) * parser->genericCapacity);
+                    checkedRealloc(parser->genericParams,
+                                  sizeof(ObjString*) * parser->genericCapacity);
                 parser->genericConstraints =
-                    realloc(parser->genericConstraints,
-                            sizeof(GenericConstraint) * parser->genericCapacity);
+                    checkedRealloc(parser->genericConstraints,
+                                  sizeof(GenericConstraint) * parser->genericCapacity);
             }
             parser->genericParams[parser->genericCount] = gname;
             parser->genericConstraints[parser->genericCount++] = gc;
@@ -2110,7 +2051,6 @@ void initParser(Parser* parser, const char* filePath) {
  */
 bool parse(const char* source, const char* filePath, ASTNode** outAst) {
     long t0 = now_ns();
-    arena_init(&arena, 1<<16);
     Parser parser;
     initParser(&parser, filePath);
     P = &parser;
@@ -2133,7 +2073,6 @@ bool parse(const char* source, const char* filePath, ASTNode** outAst) {
     *outAst = head;
     long t1 = now_ns();
     fprintf(stderr, "Parsed in %.3f ms\n", (t1-t0)/1e6);
-    arena_reset(&arena);
     return !parser.hadError;
 }
 
@@ -2149,7 +2088,7 @@ static Type* parseType(Parser* parser) {
             do {
                 Type* pt = parseType(parser);
                 if (parser->hadError) return NULL;
-                params = realloc(params, sizeof(Type*) * (pcount + 1));
+                params = checkedRealloc(params, sizeof(Type*) * (pcount + 1));
                 params[pcount++] = pt;
             } while (match(parser, TOKEN_COMMA));
         }
@@ -2215,7 +2154,7 @@ static Type* parseType(Parser* parser) {
                     do {
                         Type* at = parseType(parser);
                         if (parser->hadError) return NULL;
-                        args = realloc(args, sizeof(Type*) * (acount + 1));
+                        args = checkedRealloc(args, sizeof(Type*) * (acount + 1));
                         args[acount++] = at;
                     } while (match(parser, TOKEN_COMMA));
                     consume(parser, TOKEN_GREATER, "Expect '>' after generic arguments.");
@@ -2352,6 +2291,3 @@ static void block(Parser* parser, ASTNode** ast) {
 /**
  * Recover from a parse error by discarding tokens until a statement boundary.
  */
-static void synchronize(Parser* parser) {
-    synchronize_();
-}
