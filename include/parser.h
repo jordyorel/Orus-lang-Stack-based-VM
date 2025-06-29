@@ -28,7 +28,6 @@ typedef struct {
     Token previous;
     bool hadError;
     bool panicMode;
-    Scanner* scanner;
     int functionDepth; // Track nested function declarations
     Type* currentImplType; // Track struct type for methods
     ObjString** genericParams;
@@ -49,7 +48,7 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-void initParser(Parser* parser, Scanner* scanner, const char* filePath);
+void initParser(Parser* parser, const char* filePath);
 bool parse(const char* source, const char* filePath, ASTNode** ast);
 ParseRule* get_rule(TokenType type);
 
