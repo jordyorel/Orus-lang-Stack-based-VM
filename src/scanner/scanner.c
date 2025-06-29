@@ -1,500 +1,356 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "../../include/scanner.h"
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "../../include/common.h"
 
-/**
- * @file scanner.c
- * @brief Lexical scanner for the Orus language.
- *
- * The scanner converts raw source code into a stream of tokens that the
- * parser can consume. It recognises keywords, literals and punctuation while
- * tracking line information for diagnostics.
- */
+/* -------------------------------------------------------------------------- */
+/*                        Configuration & fast macros                         */
+/* -------------------------------------------------------------------------- */
+
+#define ERR_LEN(msg) (sizeof(msg) - 1)
+
+#define PEEK() (*scanner.current)
+#define PEEK_NEXT() (*(scanner.current + 1))
+#define IS_ALPHA(c) \
+    (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z') || (c) == '_')
+#define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
+#define IS_HEX_DIGIT(c) \
+    (IS_DIGIT(c) || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
+
+/* -------------------------------------------------------------------------- */
+/*                             Global scanner state                           */
+/* -------------------------------------------------------------------------- */
 
 Scanner scanner;
 
-// Hash table size (should be a prime number for better distribution)
-#define HASH_TABLE_SIZE 67
+/* -------------------------------------------------------------------------- */
+/*                         Very hot inline functions                          */
+/* -------------------------------------------------------------------------- */
 
-// Hash table for keywords
-KeywordEntry keywordTable[HASH_TABLE_SIZE];
-
-/**
- * Simple hash function used for the keyword table.
- *
- * @param str Null terminated string to hash.
- * @return Hash value suitable for indexing the keyword table.
- */
-unsigned int hash(const char* str) {
-    unsigned int hash = 5381;
-    int c;
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c;  // hash * 33 + c
-    }
-    return hash % HASH_TABLE_SIZE;
-}
-
-/**
- * Populate the keyword lookup table used by the scanner.
- *
- * This table maps language keywords to their corresponding token types and is
- * generated once when the scanner is initialised.
- */
-void init_keyword_table() {
-    // First, clear the table
-    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
-        keywordTable[i].keyword = NULL;
-        keywordTable[i].type = TOKEN_ERROR;
-    }
-
-    const char* keywords[] = {"and",   "break",  "continue", "else",  "elif", "false", "for",
-                              "fn",    "if",     "nil",      "or",    "not",  "print",
-                              "return", "true",   "let", "mut", "const",
-                              "while", "try",    "catch",    "i32", "i64",  "u32", "u64",  "f64",  "bool", "in",
-                              "struct", "impl",   "import",   "use",   "as",   "match", "pub", "static",
-                              NULL};
-    TokenType types[] = {
-        TOKEN_AND,  TOKEN_BREAK, TOKEN_CONTINUE, TOKEN_ELSE, TOKEN_ELIF, TOKEN_FALSE, TOKEN_FOR, TOKEN_FN,
-        TOKEN_IF,   TOKEN_NIL,   TOKEN_OR,       TOKEN_NOT,  TOKEN_PRINT, TOKEN_RETURN,
-        TOKEN_TRUE, TOKEN_LET,   TOKEN_MUT, TOKEN_CONST, TOKEN_WHILE,    TOKEN_TRY,  TOKEN_CATCH,
-        TOKEN_INT, TOKEN_I64, TOKEN_U32, TOKEN_U64,   TOKEN_F64,      TOKEN_BOOL, TOKEN_IN,
-        TOKEN_STRUCT, TOKEN_IMPL, TOKEN_IMPORT, TOKEN_USE, TOKEN_AS, TOKEN_MATCH, TOKEN_PUB, TOKEN_STATIC,
-    };
-
-    for (int i = 0; keywords[i] != NULL; i++) {
-        unsigned int index = hash(keywords[i]);
-
-        while (keywordTable[index].keyword != NULL) {
-            index = (index + 1) % HASH_TABLE_SIZE; // Linear probing for collisions
-        }
-        keywordTable[index].keyword = keywords[i];
-        keywordTable[index].type = types[i];
-    }
-}
-
-/**
- * Initialise the global scanner state for a new source buffer.
- *
- * @param source Pointer to the null terminated string containing the program
- *               source code.
- */
-void init_scanner(const char* source) {
-    scanner.start = source;
-    scanner.current = source;
-    scanner.source = source; // store the beginning of the entire source
-    scanner.line = 1;
-    scanner.column = 1;
-    scanner.lineStart = source;
-    scanner.inBlockComment = false;
-    init_keyword_table();
-}
-
-/**
- * Calculate precise column position accounting for tabs with configurable tab width.
- * 
- * @param lineStart Pointer to the start of the line
- * @param position Pointer to the target position
- * @param tabWidth Width of tab characters (typically 4 or 8)
- * @return Column number (1-based)
- */
-int calculateColumn(const char* lineStart, const char* position, int tabWidth) {
-    if (!lineStart || !position || position < lineStart) {
-        return 1;
-    }
-    
-    int column = 1;
-    for (const char* p = lineStart; p < position; p++) {
-        if (*p == '\t') {
-            // Round up to next tab stop
-            column = ((column - 1) / tabWidth + 1) * tabWidth + 1;
-        } else {
-            column++;
-        }
-    }
-    
-    return column;
-}
-
-/**
- * Find the start of the line containing the given position.
- * 
- * @param source Pointer to the beginning of the source code
- * @param position Target position within the source
- * @return Pointer to the start of the line containing position
- */
-const char* findLineStart(const char* source, const char* position) {
-    if (!source || !position || position < source) {
-        return source;
-    }
-    
-    const char* lineStart = position;
-    while (lineStart > source && lineStart[-1] != '\n') {
-        lineStart--;
-    }
-    
-    return lineStart;
-}
-
-/**
- * Determine whether a character can start or continue an identifier.
- *
- * @param c Character to test.
- * @return true if the character is alphabetic or an underscore.
- */
-static bool is_alpha(char c) {
-    return (c >= 'a' && c <= 'z') ||
-            (c >= 'A' && c <= 'Z') ||
-            c == '_';
-}
-
-/**
- * Test if a character is a decimal digit.
- *
- * @param c Character to examine.
- * @return true when the character is '0'..'9'.
- */
-static bool is_digit(char c) {
-    return c >= '0' && c <= '9';
-}
-
-/**
- * Test if a character is valid in a hexadecimal literal.
- *
- * @param c Character to examine.
- * @return true when the character is 0-9, a-f or A-F.
- */
-static bool is_hex_digit(char c) {
-    return (c >= '0' && c <= '9') ||
-           (c >= 'a' && c <= 'f') ||
-           (c >= 'A' && c <= 'F');
-}
-
-// Peek ahead to see if the upcoming characters match a literal string.
-static bool match_sequence(const char* seq) {
-    const char* p = scanner.current;
-    while (*seq != '\0') {
-        if (*p != *seq) return false;
-        p++;
-        seq++;
-    }
-    return true;
-}
-
-/**
- * Determine if the scanner has consumed all input.
- *
- * @return true when the current position is at the terminating null byte.
- */
-static bool is_at_end() {
-    return *scanner.current == '\0';
-}
-
-/**
- * Consume the next character from the source.
- *
- * @return The consumed character.
- */
-static char advance() {
-    char c = *scanner.current;
-    scanner.current++;
-    
+static inline char advance() {
+    char c = *scanner.current++;
     if (c == '\n') {
         scanner.line++;
         scanner.column = 1;
         scanner.lineStart = scanner.current;
-    } else if (c == '\t') {
-        scanner.column = ((scanner.column - 1) / 4 + 1) * 4 + 1; // Tab width of 4
     } else {
         scanner.column++;
     }
-    
     return c;
 }
 
-/**
- * Peek at the current character without consuming it.
- */
-static char peek() {
-    return *scanner.current;
-}
-
-/**
- * Look ahead one character without advancing.
- */
-static char peek_next() {
-    if (is_at_end()) return '\0';
-    return scanner.current[1];
-}
-
-/**
- * Conditionally consume a specific character.
- *
- * @param expected Character to match.
- * @return true if the character was consumed.
- */
-static bool match(char expected) {
-    if (is_at_end()) return false;
-    if (*scanner.current != expected) return false;
+static inline bool match_char(char expected) {
+    if (PEEK() != expected) return false;
     scanner.current++;
+    scanner.column++;
     return true;
 }
 
-/**
- * Construct a token object from the current lexeme.
- *
- * @param type Token type to assign.
- */
-static Token make_token(TokenType type) {
+static inline bool is_at_end() { return PEEK() == '\0'; }
+
+static inline Token make_token(TokenType type) {
     Token token;
     token.type = type;
     token.start = scanner.start;
     token.length = (int)(scanner.current - scanner.start);
     token.line = scanner.line;
-    token.column = calculateColumn(scanner.lineStart, scanner.start, 4);
+    token.column = scanner.column;
     return token;
 }
 
-/**
- * Create a token representing a lexical error.
- *
- * @param message Static error message.
- */
-static Token error_token(const char* message) {
+static inline Token error_token(const char* msg, int len) {
     Token token;
     token.type = TOKEN_ERROR;
-    token.start = message;
-    token.length = (int)(strlen(message));
+    token.start = msg;
+    token.length = len;
     token.line = scanner.line;
-    token.column = calculateColumn(scanner.lineStart, scanner.start, 4);
+    token.column = scanner.column;
     return token;
 }
 
-/**
- * Consume whitespace and comments, stopping at newlines.
- */
+/* -------------------------------------------------------------------------- */
+/*                       Fast whitespace & comment skipping                   */
+/* -------------------------------------------------------------------------- */
+
 static void skip_whitespace() {
+    const char* p = scanner.current;
+    int col = scanner.column;
+    int line = scanner.line;
+    const char* lineStart = scanner.lineStart;
+
     for (;;) {
-        char c = peek();
-
-        if (scanner.inBlockComment) {
-            if (c == '\n') {
-                return;
-            } else if (c == '\0') {
-                error_token("Unterminated block comment.");
-                return;
-            } else if (c == '*' && peek_next() == '/') {
-                advance();
-                advance();
-                scanner.inBlockComment = false;
-            } else {
-                advance();
+        char c = *p;
+        if (c == ' ' || c == '\r' || c == '\t') {
+            p++;
+            col++;
+        } else if (c == '\n') {
+            break; /* newline is significant */
+        } else if (c == '/' && p[1] == '/') {
+            p += 2;
+            while (*p != '\n' && *p) p++;
+        } else if (c == '/' && p[1] == '*') {
+            p += 2;
+            while (!(*p == '*' && p[1] == '/') && *p) {
+                if (*p == '\n') {
+                    line++;
+                    col = 1;
+                    lineStart = p + 1;
+                } else
+                    col++;
+                p++;
             }
-            continue;
-        }
-
-        switch (c) {
-            case ' ':
-            case '\r':
-            case '\t':
-                advance();
-                break;
-            case '\n':
-                // Don't skip newlines, they're significant
-                return;
-            case '/':
-                if (peek_next() == '/') {
-                    // Single-line comment
-                    while (peek() != '\n' && !is_at_end()) {
-                        advance();
-                    }
-                } else if (peek_next() == '*') {
-                    // Enter block comment mode
-                    advance();
-                    advance();
-                    scanner.inBlockComment = true;
-                    continue;
-                } else {
-                    return;
-                }
-                break;
-            default:
-                return;
+            if (*p) {
+                p += 2;
+                col += 2;
+            }
+        } else {
+            break;
         }
     }
+
+    scanner.current = p;
+    scanner.column = col;
+    scanner.line = line;
+    scanner.lineStart = lineStart;
 }
 
-/**
- * Look up a token type for a potential keyword.
- *
- * @param start  Pointer to the start of the identifier.
- * @param length Length of the identifier.
- * @return Keyword token type or TOKEN_IDENTIFIER.
- */
-static TokenType get_keyword_type(const char* start, int length) {
-    char temp[length + 1];
-    memcpy(temp, start, length);
-    temp[length] = '\0';
+/* -------------------------------------------------------------------------- */
+/*                         Perfect‐switch keyword lookup                      */
+/* -------------------------------------------------------------------------- */
 
-    unsigned int index = hash(temp);
-
-    while (keywordTable[index].keyword != NULL) {
-        if (strncmp(keywordTable[index].keyword, start, length) == 0 &&
-            keywordTable[index].keyword[length] == '\0') {
-            return keywordTable[index].type;
-        }
-        index = (index + 1) % HASH_TABLE_SIZE;
+static TokenType identifier_type(const char* start, int length) {
+    switch (start[0]) {
+        case 'a':
+            if (length == 2 && start[1] == 's') return TOKEN_AS;
+            if (length == 3 && memcmp(start, "and", 3) == 0) return TOKEN_AND;
+            break;
+        case 'b':
+            if (length == 5 && memcmp(start, "break", 5) == 0)
+                return TOKEN_BREAK;
+            if (length == 4 && memcmp(start, "bool", 4) == 0) return TOKEN_BOOL;
+            break;
+        case 'c':
+            if (length == 8 && memcmp(start, "continue", 8) == 0)
+                return TOKEN_CONTINUE;
+            if (length == 5 && memcmp(start, "catch", 5) == 0)
+                return TOKEN_CATCH;
+            if (length == 5 && memcmp(start, "const", 5) == 0)
+                return TOKEN_CONST;
+            break;
+        case 'e':
+            if (length == 4 && memcmp(start, "else", 4) == 0) return TOKEN_ELSE;
+            if (length == 4 && memcmp(start, "elif", 4) == 0) return TOKEN_ELIF;
+            break;
+        case 'f':
+            if (length == 5 && memcmp(start, "false", 5) == 0)
+                return TOKEN_FALSE;
+            if (length == 3 && memcmp(start, "for", 3) == 0) return TOKEN_FOR;
+            if (length == 2 && start[1] == 'n') return TOKEN_FN;
+            break;
+        case 'i':
+            if (length == 2 && memcmp(start, "if", 2) == 0) return TOKEN_IF;
+            if (length == 2 && memcmp(start, "in", 2) == 0) return TOKEN_IN;
+            if (length == 3 && memcmp(start, "i32", 3) == 0) return TOKEN_INT;
+            if (length == 3 && memcmp(start, "i64", 3) == 0) return TOKEN_I64;
+            if (length == 4 && memcmp(start, "impl", 4) == 0) return TOKEN_IMPL;
+            if (length == 6 && memcmp(start, "import", 6) == 0)
+                return TOKEN_IMPORT;
+            break;
+        case 'l':
+            if (length == 3 && memcmp(start, "let", 3) == 0) return TOKEN_LET;
+            break;
+        case 'm':
+            if (length == 3 && memcmp(start, "mut", 3) == 0) return TOKEN_MUT;
+            if (length == 5 && memcmp(start, "match", 5) == 0)
+                return TOKEN_MATCH;
+            break;
+        case 'n':
+            if (length == 3 && memcmp(start, "nil", 3) == 0) return TOKEN_NIL;
+            if (length == 3 && memcmp(start, "not", 3) == 0) return TOKEN_NOT;
+            break;
+        case 'o':
+            if (length == 2 && memcmp(start, "or", 2) == 0) return TOKEN_OR;
+            break;
+        case 'p':
+            if (length == 5 && memcmp(start, "print", 5) == 0)
+                return TOKEN_PRINT;
+            if (length == 3 && memcmp(start, "pub", 3) == 0) return TOKEN_PUB;
+            break;
+        case 'r':
+            if (length == 6 && memcmp(start, "return", 6) == 0)
+                return TOKEN_RETURN;
+            break;
+        case 's':
+            if (length == 6 && memcmp(start, "struct", 6) == 0)
+                return TOKEN_STRUCT;
+            if (length == 6 && memcmp(start, "static", 6) == 0)
+                return TOKEN_STATIC;
+            break;
+        case 't':
+            if (length == 4 && memcmp(start, "true", 4) == 0) return TOKEN_TRUE;
+            if (length == 3 && memcmp(start, "try", 3) == 0) return TOKEN_TRY;
+            break;
+        case 'u':
+            if (length == 3 && memcmp(start, "use", 3) == 0) return TOKEN_USE;
+            if (length == 3 && memcmp(start, "u32", 3) == 0) return TOKEN_U32;
+            if (length == 3 && memcmp(start, "u64", 3) == 0) return TOKEN_U64;
+            break;
+        case 'w':
+            if (length == 5 && memcmp(start, "while", 5) == 0)
+                return TOKEN_WHILE;
+            break;
     }
-
     return TOKEN_IDENTIFIER;
 }
 
-/**
- * Scan an identifier or keyword token.
- *
- * @return The constructed token with appropriate type.
- */
+/* -------------------------------------------------------------------------- */
+/*                            Identifier & keyword scan                       */
+/* -------------------------------------------------------------------------- */
+
 static Token identifier() {
-    while (is_alpha(peek()) || is_digit(peek())) {
+    while (IS_ALPHA(PEEK()) || IS_DIGIT(PEEK())) {
         advance();
     }
-
     int length = (int)(scanner.current - scanner.start);
-    TokenType type = get_keyword_type(scanner.start, length);
-
+    TokenType type = identifier_type(scanner.start, length);
     return make_token(type);
 }
 
-// Scan a number literal
-/**
- * Scan an integer or floating point literal.
- *
- * Handles hexadecimal prefixes, underscores and optional unsigned suffixes.
- * @return Token for the numeric literal.
- */
+/* -------------------------------------------------------------------------- */
+/*                               Sequence matching */
+/* -------------------------------------------------------------------------- */
+
+static inline bool match_sequence(const char* seq) {
+    const char* p = scanner.current;
+    while (*seq) {
+        if (*p++ != *seq++) return false;
+    }
+    return true;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          Number literal scanning                           */
+/* -------------------------------------------------------------------------- */
+
 static Token number() {
-    // Check for hexadecimal prefix 0x or 0X
-    if (scanner.start[0] == '0' && (peek() == 'x' || peek() == 'X')) {
-        advance(); // consume 'x' or 'X'
-        if (!is_hex_digit(peek())) {
-            return error_token("Invalid hexadecimal literal.");
-        }
-        while (is_hex_digit(peek()) || peek() == '_') {
-            if (peek() == '_') {
+    /* 0xABC-style hex? */
+    if (scanner.start[0] == '0' && (PEEK() == 'x' || PEEK() == 'X')) {
+        advance(); /* consume x/X */
+        if (!IS_HEX_DIGIT(PEEK()))
+            return error_token("Invalid hexadecimal literal.",
+                               ERR_LEN("Invalid hexadecimal literal."));
+        while (IS_HEX_DIGIT(PEEK()) || PEEK() == '_') {
+            if (PEEK() == '_') {
                 advance();
-                if (!is_hex_digit(peek())) {
+                if (!IS_HEX_DIGIT(PEEK()))
                     return error_token(
-                        "Invalid underscore placement in number.");
-                }
+                        "Invalid underscore placement in number.",
+                        ERR_LEN("Invalid underscore placement in number."));
             } else {
                 advance();
             }
         }
-        if (peek() == 'u' || peek() == 'U') {
-            advance();
-        }
+        if (PEEK() == 'u' || PEEK() == 'U') advance();
         return make_token(TOKEN_NUMBER);
     }
 
-    // Process the integer part for decimal numbers
-    while (is_digit(peek()) || peek() == '_') {
-        if (peek() == '_') {
+    /* Decimal integer + underscores */
+    while (IS_DIGIT(PEEK()) || PEEK() == '_') {
+        if (PEEK() == '_') {
             advance();
-            if (!is_digit(peek())) {
-                return error_token("Invalid underscore placement in number.");
-            }
+            if (!IS_DIGIT(PEEK()))
+                return error_token(
+                    "Invalid underscore placement in number.",
+                    ERR_LEN("Invalid underscore placement in number."));
         } else {
             advance();
         }
     }
 
-    // Process the fractional part
-    if (peek() == '.' && is_digit(peek_next())) {
-        advance();  // Consume the dot
-        while (is_digit(peek()) || peek() == '_') {
-            if (peek() == '_') {
+    /* Fractional part */
+    if (PEEK() == '.' && IS_DIGIT(PEEK_NEXT())) {
+        advance();
+        while (IS_DIGIT(PEEK()) || PEEK() == '_') {
+            if (PEEK() == '_') {
                 advance();
-                if (!is_digit(peek())) {
+                if (!IS_DIGIT(PEEK()))
                     return error_token(
-                        "Invalid underscore placement in number.");
-                }
+                        "Invalid underscore placement in number.",
+                        ERR_LEN("Invalid underscore placement in number."));
             } else {
                 advance();
             }
         }
     }
 
-    // Process the exponent part
-    if (peek() == 'e' || peek() == 'E') {
-        advance();  // Consume 'e' or 'E'
-
-        if (peek() == '-' || peek() == '+') {
-            advance();  // Consume the sign
-        }
-
-        if (!is_digit(peek())) {
+    /* Exponent part */
+    if (PEEK() == 'e' || PEEK() == 'E') {
+        advance();
+        if (PEEK() == '+' || PEEK() == '-') advance();
+        if (!IS_DIGIT(PEEK()))
             return error_token(
-                "Invalid scientific notation: Expected digit after 'e' or "
-                "'E'.");
-        }
-
-        while (is_digit(peek()) || peek() == '_') {
-            if (peek() == '_') {
+                "Invalid scientific notation: Expected digit after 'e' or 'E'.",
+                ERR_LEN("Invalid scientific notation: Expected digit after 'e' "
+                        "or 'E'."));
+        while (IS_DIGIT(PEEK()) || PEEK() == '_') {
+            if (PEEK() == '_') {
                 advance();
-                if (!is_digit(peek())) {
+                if (!IS_DIGIT(PEEK()))
                     return error_token(
-                        "Invalid underscore placement in number.");
-                }
+                        "Invalid underscore placement in number.",
+                        ERR_LEN("Invalid underscore placement in number."));
             } else {
                 advance();
             }
         }
     }
 
-    // Optional type suffixes: i32, i64, u32, u64 or f64. Also retain plain 'u'
+    /* Optional suffixes */
     if (match_sequence("i32")) {
-        advance(); advance(); advance();
+        advance();
+        advance();
+        advance();
     } else if (match_sequence("i64")) {
-        advance(); advance(); advance();
+        advance();
+        advance();
+        advance();
     } else if (match_sequence("u32")) {
-        advance(); advance(); advance();
+        advance();
+        advance();
+        advance();
     } else if (match_sequence("u64")) {
-        advance(); advance(); advance();
+        advance();
+        advance();
+        advance();
     } else if (match_sequence("f64")) {
-        advance(); advance(); advance();
-    } else if (peek() == 'u' || peek() == 'U') {
+        advance();
+        advance();
+        advance();
+    } else if (PEEK() == 'u' || PEEK() == 'U') {
         advance();
     }
-
-    // Number contains underscores, which is allowed
 
     return make_token(TOKEN_NUMBER);
 }
 
-// Scan a string literal
-/**
- * Scan a quoted string literal handling escape sequences.
- *
- * @return Token for the parsed string.
- */
+/* -------------------------------------------------------------------------- */
+/*                              String literal scanning                       */
+/* -------------------------------------------------------------------------- */
+
 static Token string() {
-    const char* stringStart = scanner.start;  // Remember where the string started
-    int stringLine = scanner.line;            // Remember the line where string started
-    
-    while (peek() != '"' && !is_at_end()) {
-        if (peek() == '\\') {
+    while (PEEK() != '"' && !is_at_end()) {
+        if (PEEK() == '\\') {
             advance();
-            switch (peek()) {
-                case 'n':
-                case 't':
-                case '\\':
-                case '"':
-                    advance();
-                    break;
-                default:
-                    return error_token("Invalid escape sequence.");
+            if (PEEK() == 'n' || PEEK() == 't' || PEEK() == '\\' ||
+                PEEK() == '"') {
+                advance();
+            } else {
+                return error_token("Invalid escape sequence.",
+                                   ERR_LEN("Invalid escape sequence."));
             }
         } else {
             advance();
@@ -502,30 +358,76 @@ static Token string() {
     }
 
     if (is_at_end()) {
-        // For unterminated string, we want to point to the opening quote
-        // but we need to preserve the error message mechanism
-        // Let's create a special error token that points to the right location
-        Token token;
-        token.type = TOKEN_ERROR;
-        token.start = "Unterminated string.";  // Keep the error message
-        token.length = (int)strlen("Unterminated string.");
-        token.line = stringLine;  // Use the line where string started
-        
-        // Calculate column for the opening quote
-        const char* lineStart = stringStart;
-        while (lineStart > scanner.source && lineStart[-1] != '\n') lineStart--;
-        token.column = (int)(stringStart - lineStart) + 1;
-        
-        return token;
+        /* unterminated string */
+        return error_token("Unterminated string.",
+                           ERR_LEN("Unterminated string."));
     }
-    advance();  // Consume the closing quote
+
+    advance(); /* closing '"' */
     return make_token(TOKEN_STRING);
 }
 
+/* -------------------------------------------------------------------------- */
+/*                               Public API                                   */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Retrieve the next lexical token from the input stream.
- *
- * @return The next token describing the lexeme.
+ * Find the start of the line containing the given position.
+ */
+const char* findLineStart(const char* source, const char* position) {
+    if (!source || !position || position < source) {
+        return source;
+    }
+    
+    const char* lineStart = position;
+    
+    // Move backwards until we find a newline or reach the beginning
+    while (lineStart > source && *(lineStart - 1) != '\n') {
+        lineStart--;
+    }
+    
+    return lineStart;
+}
+
+/**
+ * Calculate the display column accounting for tab width.
+ */
+int calculateColumn(const char* lineStart, const char* position, int tabWidth) {
+    if (!lineStart || !position || position < lineStart) {
+        return 1;
+    }
+    
+    int column = 1;
+    const char* p = lineStart;
+    
+    while (p < position) {
+        if (*p == '\t') {
+            // Advance to next tab stop
+            column = ((column - 1) / tabWidth + 1) * tabWidth + 1;
+        } else {
+            column++;
+        }
+        p++;
+    }
+    
+    return column;
+}
+
+/**
+ * Initialize scanner for a new source buffer.
+ */
+void init_scanner(const char* source) {
+    scanner.start = source;
+    scanner.current = source;
+    scanner.source = source;
+    scanner.line = 1;
+    scanner.column = 1;
+    scanner.lineStart = source;
+    scanner.inBlockComment = false;
+}
+
+/**
+ * Retrieve the next token.
  */
 Token scan_token() {
     skip_whitespace();
@@ -537,80 +439,79 @@ Token scan_token() {
 
     char c = advance();
 
-    // Handle newline as a token
-    if (c == '\n') {
-        return make_token(TOKEN_NEWLINE);
-    }
-
-    if (is_alpha(c)) {
-        Token token = identifier();
-        return token;
-    }
-    if (is_digit(c)) return number();
-
+    /* Single‐char or 2‐char tokens */
     switch (c) {
-        case '(': return make_token(TOKEN_LEFT_PAREN);
-        case ')': return make_token(TOKEN_RIGHT_PAREN);
-        case '{': return make_token(TOKEN_LEFT_BRACE);
-        case '}': return make_token(TOKEN_RIGHT_BRACE);
-        case '[': return make_token(TOKEN_LEFT_BRACKET);
-        case ']': return make_token(TOKEN_RIGHT_BRACKET);
-        case ';': return make_token(TOKEN_SEMICOLON);
-        case ',': return make_token(TOKEN_COMMA);
+        case '\n':
+            return make_token(TOKEN_NEWLINE);
+        case '(':
+            return make_token(TOKEN_LEFT_PAREN);
+        case ')':
+            return make_token(TOKEN_RIGHT_PAREN);
+        case '{':
+            return make_token(TOKEN_LEFT_BRACE);
+        case '}':
+            return make_token(TOKEN_RIGHT_BRACE);
+        case '[':
+            return make_token(TOKEN_LEFT_BRACKET);
+        case ']':
+            return make_token(TOKEN_RIGHT_BRACKET);
+        case ';':
+            return make_token(TOKEN_SEMICOLON);
+        case ',':
+            return make_token(TOKEN_COMMA);
         case '.':
-            if (peek() == '.') {
-                advance();
-                return make_token(TOKEN_DOT_DOT);
-            }
+            if (match_char('.')) return make_token(TOKEN_DOT_DOT);
             return make_token(TOKEN_DOT);
         case '?':
             return make_token(TOKEN_QUESTION);
         case '-':
-            if (peek() == '>') {
-                advance();
-                return make_token(TOKEN_ARROW);
-            }
-            if (match('=')) return make_token(TOKEN_MINUS_EQUAL);
+            if (match_char('>')) return make_token(TOKEN_ARROW);
+            if (match_char('=')) return make_token(TOKEN_MINUS_EQUAL);
             return make_token(TOKEN_MINUS);
         case '+':
-            if (match('=')) return make_token(TOKEN_PLUS_EQUAL);
+            if (match_char('=')) return make_token(TOKEN_PLUS_EQUAL);
             return make_token(TOKEN_PLUS);
         case '/':
-            if (match('=')) return make_token(TOKEN_SLASH_EQUAL);
+            if (match_char('=')) return make_token(TOKEN_SLASH_EQUAL);
             return make_token(TOKEN_SLASH);
         case '%':
-            if (match('=')) return make_token(TOKEN_MODULO_EQUAL);
+            if (match_char('=')) return make_token(TOKEN_MODULO_EQUAL);
             return make_token(TOKEN_MODULO);
         case '*':
-            if (match('=')) return make_token(TOKEN_STAR_EQUAL);
+            if (match_char('=')) return make_token(TOKEN_STAR_EQUAL);
             return make_token(TOKEN_STAR);
         case '!':
-            if (match('=')) {
-                return make_token(TOKEN_BANG_EQUAL);
-            }
+            if (match_char('=')) return make_token(TOKEN_BANG_EQUAL);
             return make_token(TOKEN_BIT_NOT);
         case '=':
-            return make_token(
-                match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+            return make_token(match_char('=') ? TOKEN_EQUAL_EQUAL
+                                              : TOKEN_EQUAL);
         case '<':
-            if (match('<')) return make_token(TOKEN_SHIFT_LEFT);
-            return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+            if (match_char('<')) return make_token(TOKEN_SHIFT_LEFT);
+            return make_token(match_char('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
         case '>':
-            if (peek() == '>' && peek_next() != '{' && peek_next() != '>') {
+            if (PEEK() == '>' && PEEK_NEXT() != '{' && PEEK_NEXT() != '>') {
                 advance();
                 return make_token(TOKEN_SHIFT_RIGHT);
             }
-            return make_token(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+            return make_token(match_char('=') ? TOKEN_GREATER_EQUAL
+                                              : TOKEN_GREATER);
         case '&':
             return make_token(TOKEN_BIT_AND);
         case '|':
             return make_token(TOKEN_BIT_OR);
         case '^':
             return make_token(TOKEN_BIT_XOR);
-        case '"': return string();
         case ':':
             return make_token(TOKEN_COLON);
+        case '"':
+            return string();
     }
 
-    return error_token("Unexpected character.");
+    /* Identifiers and numbers */
+    if (IS_ALPHA(c)) return identifier();
+    if (IS_DIGIT(c)) return number();
+
+    return error_token("Unexpected character.",
+                       ERR_LEN("Unexpected character."));
 }
