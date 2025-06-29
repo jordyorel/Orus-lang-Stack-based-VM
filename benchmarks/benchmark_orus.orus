@@ -43,5 +43,5 @@ fn main() {
 
     // Print elapsed seconds
     let elapsed = timestamp() - start
-    print(elapsed)
+    print("Time elapsed: {}", elapsed)
 }

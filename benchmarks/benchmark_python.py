@@ -37,7 +37,7 @@ def main():
     
     # Print elapsed seconds
     elapsed = time.time() - start
-    print(elapsed)
+    print(f"Time elapse: {elapsed}")
 
 if __name__ == "__main__":
     main()
